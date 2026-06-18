@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet
-     Version 57
+     Version 58
      E. R. A. Hiller, 2026
      Alle Rechte vorbehalten. -->
 <html lang="de">
@@ -17,7 +17,8 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000}
-canvas{position:absolute;inset:0;width:100%;height:100%}
+#c-mem,#c-live,#c-fx,#c-ui{position:fixed;inset:0;width:100vw;height:100vh}
+#counter-canvas{position:absolute;inset:0;width:100%;height:100%}
 #c-mem{z-index:1}#c-live{z-index:2}#c-fx{z-index:3}#c-ui{z-index:4;pointer-events:none}
 #label{position:absolute;z-index:5;bottom:20px;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-style:italic;font-size:11px;letter-spacing:.204em;color:rgba(210,185,120,.434);white-space:nowrap;pointer-events:none}
 #t{position:absolute;z-index:5;top:18px;right:22px;font-family:"Courier New",monospace;font-size:8px;color:rgba(230,235,255,.055);letter-spacing:.1em;pointer-events:none;text-align:right;line-height:1.45}
@@ -282,6 +283,16 @@ function contentActivityScale(){return analysis&&analysis.activityScale!=null?an
 function contentImpulseScale(){const s=contentActivityScale();return clamp(.18+.82*s,.10,1);}
 function contentIsThin(){return !!(analysis&&analysis.thinInput);}
 const VISUAL_SHIFT_X=.030; // kleine optische Rechtskorrektur der gesamten Bildebene
+function viewportSize(){
+  const de=document.documentElement,body=document.body;
+  const w=Math.round(window.innerWidth||de&&de.clientWidth||body&&body.clientWidth||0);
+  const h=Math.round(window.innerHeight||de&&de.clientHeight||body&&body.clientHeight||0);
+  return {w:Math.max(1,w),h:Math.max(1,h)};
+}
+function imageCenterPoint(){
+  const z=Math.max(1e-3,set.zoom||1);
+  return {x:W*.5-W*(VISUAL_SHIFT_X||0)/z,y:H*.5};
+}
 function sceneTransform(c){const z=set.zoom||1;c.translate(W*.5+W*VISUAL_SHIFT_X,H*.5);c.scale(z,z);c.translate(-W*.5,-H*.5);}
 function attractionLevel(){const raw=clamp(set.attraction==null?1.60:set.attraction,.002,3.40);return raw<=.004?raw:clamp(raw*1.50,.002,5.10);}
 function centerSpread(){return 1.50;}
@@ -320,8 +331,8 @@ function containEntity(e,hard){
   if(e.y!==oy){if((oy<b.top&&e.vy<0)||(oy>b.bottom&&e.vy>0))e.vy=0;else e.vy*=hard?0.20:0.42;}
 }
 function keepLinkControlInFrame(x,y,pad){const b=insetVisibleBounds(.030,pad==null?20:pad);return {x:clamp(x,b.left,b.right),y:clamp(y,b.top,b.bottom)};}
-function resize(){W=document.body.clientWidth;H=document.body.clientHeight;DPR=Math.min(2,devicePixelRatio||1);ids.forEach(id=>{const c=document.getElementById(id);c.width=Math.max(1,W*DPR);c.height=Math.max(1,H*DPR);c.style.width=W+'px';c.style.height=H+'px';ctx[id]=c.getContext('2d');ctx[id].setTransform(DPR,0,0,DPR,0,0);});drawUI();}
-addEventListener('resize',resize);resize();
+function resize(){const vp=viewportSize();W=vp.w;H=vp.h;DPR=Math.min(2,devicePixelRatio||1);ids.forEach(id=>{const c=document.getElementById(id);c.width=Math.max(1,W*DPR);c.height=Math.max(1,H*DPR);c.style.width=W+'px';c.style.height=H+'px';ctx[id]=c.getContext('2d');ctx[id].setTransform(DPR,0,0,DPR,0,0);});drawUI();}
+addEventListener('resize',resize);if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);resize();
 
 const STOP=new Set(('aber alle als also am an auf aus bei bin bis bist das dass dem den der des die dies diese dieser dieses doch du ein eine einem einen einer eines er es fuer im in ist ja kann kein keine mit nicht noch nur oder sind so um und vom von vor war was weil wenn wie wir zu zum zur ich mich mir man mehr sehr schon hat habe haben wird werden wurde auch dann dort hier eher nach ueber über ohne durch gegen seine ihrer ihre sein sie ihm ihn uns euch').split(/\s+/));
 const DEMO='muster und struktur tauchen zuerst als unscharfer kern auf\nfrage und antwort verschieben den schwerpunkt nicht gleichmaessig\nkritik erzeugt einen kurzen gegenzug, danach stille und nachlauf\ngedaechtnis haelt einzelne formen, waehrend aktivitaet anderswo entsteht\nlauflicht verbindet zwei zentren, kehrt um, wird wieder leiser\nresonanz und form verdichten sich, aber nicht gleichzeitig ueberall\nspaeter kehrt das muster zurueck und spricht in weisseren kanten';
@@ -437,12 +448,10 @@ function sparsePoint(i,n,word){
   const h=hash((word||'motiv')+'|raum|'+layoutSalt);
   const base=Math.min(W,H);
   if(i===0){
-    const a=(h%6283)/1000;
-    const rad=base*(.018+.038*((h>>>9)%1000)/1000);
-    return withLayoutJitter({
-      x:clamp(W*.50+Math.cos(a)*rad*1.18,W*.38,W*.62),
-      y:clamp(H*.50+Math.sin(a)*rad*.86,H*.40,H*.60)
-    },i,word,.010);
+    // Safari-Fix: Der erste Ursprung bleibt auf der wirklichen Bildmitte,
+    // unabhaengig vom geoeffneten Eingabepanel und ohne initialen Jitter.
+    const c=imageCenterPoint();
+    return {x:c.x,y:c.y};
   }
   const a=layoutRunRotation()+i*2.399963+motifSpatialAngle(word,i,'motif-ring')*.42+((h>>>17)%1000)/1000*.52;
   // Raumspreizung: weiterhin weit, aber mit laufabhaengiger Rotation und Radiusvariation.
@@ -2204,6 +2213,7 @@ function deriveTextControlProfile(a){
   };
 }
 function applyText(txt){
+  resize();
   const hasText=!!(txt||'').trim();
   analysis=analyseText(txt,!hasText);
   seed=analysis.seed;
