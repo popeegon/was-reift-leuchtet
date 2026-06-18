@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<!-- Was reift, leuchtet
+     Version 57
+     E. R. A. Hiller, 2026
+     Alle Rechte vorbehalten. -->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="E. R. A. Hiller">
+<meta name="copyright" content="E. R. A. Hiller, 2026. Alle Rechte vorbehalten.">
+<meta name="description" content="Was reift, leuchtet — Eine Visualisierung von Chat-Verläufen. E. R. A. Hiller, 2026.">
+<meta name="dcterms.creator" content="E. R. A. Hiller">
+<meta name="dcterms.date" content="2026">
+<meta name="dcterms.rights" content="© E. R. A. Hiller, 2026. Alle Rechte vorbehalten.">
+<title>Was reift, leuchtet | E. R. A. Hiller</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+#c-mem{z-index:1}#c-live{z-index:2}#c-fx{z-index:3}#c-ui{z-index:4;pointer-events:none}
+#label{position:absolute;z-index:5;bottom:20px;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-style:italic;font-size:11px;letter-spacing:.204em;color:rgba(210,185,120,.434);white-space:nowrap;pointer-events:none}
+#t{position:absolute;z-index:5;top:18px;right:22px;font-family:"Courier New",monospace;font-size:8px;color:rgba(230,235,255,.055);letter-spacing:.1em;pointer-events:none;text-align:right;line-height:1.45}
+#toggle{position:absolute;z-index:8;left:14px;top:14px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(210,220,255,.14);background:rgba(0,0,0,.22);color:rgba(210,220,255,.38);font:18px/20px Georgia,serif;cursor:pointer}
+#panel{position:absolute;z-index:7;left:14px;top:46px;width:312px;max-height:calc(100vh - 64px);overflow:auto;padding:13px;border:1px solid rgba(125,145,220,.14);border-radius:12px;background:rgba(2,4,12,.78);backdrop-filter:blur(8px);display:none;color:rgba(224,230,255,.66);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px}
+#panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
+.langFlag{display:inline-block;text-shadow:-1px 0 0 rgba(210,220,255,.2),1px 0 0 rgba(210,220,255,.2),0 -1px 0 rgba(210,220,255,.2),0 1px 0 rgba(210,220,255,.2),-1px -1px 0 rgba(210,220,255,.2),1px -1px 0 rgba(210,220,255,.2),-1px 1px 0 rgba(210,220,255,.2),1px 1px 0 rgba(210,220,255,.2)}
+</style>
+</head>
+<body>
+<canvas id="c-mem"></canvas><canvas id="c-live"></canvas><canvas id="c-fx"></canvas><canvas id="c-ui"></canvas>
+<div id="label">Was reift, leuchtet</div><div id="t" style="display:none">t = 0</div>
+<div id="counter" style="position:absolute;z-index:8;right:14px;top:14px;width:80px;height:24px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(0,0,0,.22);pointer-events:none;display:flex;align-items:center;justify-content:center;"><div id="counter-bar" style="position:relative;width:90%;height:7px;border-radius:4px;background:transparent;box-shadow:0 0 7px rgba(220,226,255,.15);transition:box-shadow .9s linear;contain:paint;"><canvas id="counter-canvas" style="display:block;width:100%;height:100%;"></canvas></div></div>
+<button id="toggle" style="width:auto;min-width:72px;padding:0 10px;font-size:10px;letter-spacing:.12em;font-style:normal;color:#ffffff;border-radius:8px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Eingabe</button>
+<div id="panel">
+  <div id="screenHint" style="font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:0 0 4px;">Entfaltet sich am besten auf größeren Bildschirmen.</div>
+  <textarea id="chat" placeholder="Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet."></textarea>
+  <div style="display:flex;gap:6px;margin:0 0 6px;width:100%;box-sizing:border-box">
+    <button type="button" class="action" id="analyse" style="flex:2;margin:0;white-space:nowrap;min-width:0">Chat auswerten</button>
+    <button type="button" class="action" id="demo" style="flex:1;margin:0;white-space:nowrap">Demo</button>
+    <button type="button" class="action" id="reset" style="flex:1;margin:0;white-space:nowrap">Reset</button>
+  </div>
+  <div class="status" id="status">Kein Text eingegeben. Demo l&auml;uft.</div>
+  <div class="row"><span id="labelDensity">Belebung</span><span id="densityV">4</span><input id="density" type="range" min="0" max="10" step="1" value="4"></div>
+  <div class="row"><span id="labelTempo">Tempo</span><span id="tempoV">4</span><input id="tempo" type="range" min="0" max="10" step="1" value="4"></div>
+  <div class="row"><span id="labelMemory">Ged&auml;chtnis</span><span id="memoryV">5</span><input id="memory" type="range" min="0" max="10" step="1" value="5"></div>
+  <div class="row"><span id="labelMaxCenters">Zentren</span><span id="maxCentersV">6</span><input id="maxCenters" type="range" min="1" max="10" step="1" value="6"></div>
+  <div class="row"><span id="labelBirth">Reifung</span><span id="birthV">5</span><input id="birth" type="range" min="0" max="10" step="1" value="5"></div>
+  <div class="row"><span id="labelNetwork">Verflechtung</span><span id="networkV">6</span><input id="network" type="range" min="0" max="10" step="1" value="6"></div>
+  <div class="row"><span id="labelFusion">Verschmelzung</span><span id="fusionV">4</span><input id="fusion" type="range" min="0" max="10" step="1" value="4"></div>
+  <div class="row"><span id="labelSpannung">Spannung</span><span id="spannungV">5</span><input id="spannung" type="range" min="0" max="10" step="1" value="5"></div>
+  <div class="row"><span id="labelAttraction">Anziehung</span><span id="attractionV">6</span><input id="attraction" type="range" min="0" max="10" step="1" value="6"></div>
+  <label class="row"><span id="showLabel" style="white-space:nowrap">Motivanker zeigen</span><span></span><input id="show" type="checkbox" style="justify-self:start"></label>
+  <div style="display:flex;gap:6px;margin:14px 0 6px;justify-content:center;">
+    <button type="button" id="langDE" title="Deutsch" style="background:none;border:1px solid rgba(210,220,255,.2);border-radius:4px;cursor:pointer;font-size:26px;opacity:1;padding:1px 4px;line-height:1;"><span class="langFlag">&#x1F1E9;&#x1F1EA;</span></button>
+    <button type="button" id="langEN" title="English" style="background:none;border:1px solid rgba(210,220,255,.2);border-radius:4px;cursor:pointer;font-size:26px;opacity:0.35;padding:1px 4px;line-height:1;"><span class="langFlag">&#x1F1EC;&#x1F1E7;</span></button>
+  </div>
+  <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet. — Created by E. R. A. Hiller, 2026</div>
+</div>
+
+<template id="overlayTemplate">
+<div id="infoOverlay" style="position:fixed;z-index:200;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.82);backdrop-filter:blur(2px);overflow-y:auto;">
+  <div class="overlay-de" style="max-width:660px;margin:48px auto 48px;padding:0 28px;color:rgba(220,225,255,.80);font:14px/1.75 Georgia,serif;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;">
+      <div>
+        <div style="font:bold 20px/1.3 Georgia,serif;color:rgba(230,235,255,.94);margin-bottom:5px;">Was reift, leuchtet</div>
+        <div style="font:12.5px/1.4 ui-sans-serif,system-ui,sans-serif;color:rgba(200,168,75,.75);font-style:italic;">Eine Visualisierung von Chat-Verläufen · E. R. A. Hiller, 2026</div>
+      </div>
+      <button id="closeOverlay" style="background:none;border:1px solid rgba(200,210,255,.2);border-radius:6px;color:rgba(200,210,255,.5);font-size:18px;cursor:pointer;padding:2px 10px;line-height:1.4;flex-shrink:0;margin-left:20px;">✕</button>
+    </div>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">GEDANKENGANG ALS TOPOLOGIE</div>
+    <p style="margin:0 0 10px;">Ein Chat ist mehr als eine Folge von Nachrichten. Er besitzt eine innere Gestalt: Gedanken tauchen auf, werden verlassen, kehren wieder, verzweigen sich, verdichten sich oder verlieren an Gewicht. Manche Begriffe erscheinen nur kurz. Andere tragen den Verlauf über längere Strecken. Wieder andere ruhen eine Zeit lang und werden später erneut aufgegriffen.</p>
+    <p style="margin:0 0 10px;"><i>Was reift, leuchtet</i> versucht, diese Bewegung sichtbar zu machen. Nicht als Zusammenfassung, nicht als Bewertung und nicht als Illustration einzelner Inhalte, sondern als räumlich-zeitliche <b>Topologie eines Gedankengangs</b>.</p>
+    <p style="margin:0 0 24px;">Topologie meint hier: die Ordnung von Nähe, Wiederkehr, Gewichtung und Verbindung. Was im Text nah beieinander liegt, was sich wiederholt, was später zurückkehrt oder mit anderen Motiven verbunden ist, erhält eine räumliche und zeitliche Entsprechung. Aus dem Verlauf des Chats entsteht ein bewegtes Bildfeld.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">VERFAHREN</div>
+    <p style="margin:0 0 10px;">Der eingegebene Text wird lokal im Browser untersucht. Er wird in Abschnitte geteilt, normalisiert und auf wiederkehrende Wörter, Motive, Verteilungen und Beziehungen hin ausgewertet. Dabei zählt nicht nur, wie häufig ein Begriff erscheint, sondern auch, wann er auftaucht, wie weit er sich durch den Verlauf zieht, mit welchen anderen Begriffen er in Nähe steht und ob er später wieder aufgenommen wird.</p>
+    <p style="margin:0 0 10px;">Aus diesen Signalen entstehen Motive. Ein Motiv ist hier kein erklärendes Schlagwort und keine semantische Deutung, sondern ein visuelles Gravitationszentrum. Um solche Zentren sammeln sich Formen, Bewegungen, Verbindungen und Sedimente.</p>
+    <p style="margin:0 0 24px;">Das Verfahren verwendet kein Sprachmodell und keine externe KI-Auswertung. Es entscheidet nicht, was ein Chat „bedeutet“. Es liest Textur: Wiederholung, Abstand, Nähe, Dichte, Spannung, Rückkehr. Darin liegt seine Grenze, aber auch seine Genauigkeit. Das Werk versteht den Text nicht wie ein Mensch; es macht sichtbar, welche formalen Spuren der Text selbst erzeugt.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">VOM TEXT ZUM BILDKÖRPER</div>
+    <p style="margin:0 0 10px;">Der Text ist das Skelett der Visualisierung. Er bestimmt die innere Ordnung: Motive, Zentren, Beziehungen, Impulse, Reifungsphasen. Sobald diese Struktur ausgewertet ist, tritt der Text selbst zurück. Was bleibt, ist kein lesbarer Chat mehr, sondern ein Bildkörper, der aus ihm hervorgegangen ist.</p>
+    <p style="margin:0 0 10px;">Die Visualisierung zeigt also nicht den Text als Text. Sie zeigt, was von ihm übrig bleibt, wenn seine sprachliche Oberfläche entfernt wird: eine bewegte Topologie aus Verdichtung, Erinnerung, Wiederkehr und Verbindung.</p>
+    <p style="margin:0 0 24px;">So entsteht eine eigentümliche Verschiebung. Der Chat wird nicht erklärt, sondern in einen anderen Zustand überführt. Aus Sätzen werden Kräfte. Aus Wiederholungen werden Zentren. Aus Rückgriffen werden Reaktivierungen. Aus Vergangenem wird Sediment.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">WAS IM BILD GESCHIEHT</div>
+    <p style="margin:0 0 10px;">Zu Beginn erscheinen einzelne Formen, noch lose und tastend. Mit zunehmendem Verlauf entstehen Cluster. Einige verdichten sich, andere bleiben randständig, manche treten zurück. Zwischen verwandten Motiven bilden sich Filamente und Lauflichter. Sie markieren Beziehungen, Übergänge und erneute Aktivierungen, ohne daraus ein Diagramm zu machen.</p>
+    <p style="margin:0 0 10px;">Die Cluster bewegen sich nicht nur durch das Bild; ihre Formen können sich auch um gemeinsame Zentren drehen. Diese Rotation ist als innere Bewegung eines Motivfeldes gedacht. Sie erzeugt keine Spur der Bewegung, sondern verschiebt und ordnet das Cluster von innen.</p>
+    <p style="margin:0 0 10px;">Was aus dem Vordergrund verschwindet, wird nicht gelöscht. Es geht in eine Gedächtnisebene über: als Sediment, als schwacher Rest, als Hülle. Wenn ein früheres Thema später erneut aufgegriffen wird, können Teile dieser Sedimente wieder aufglimmen. Erinnerung erscheint dadurch nicht als Archiv fertiger Zeichen, sondern als Material, das ruhen, nachwirken und wieder aktiv werden kann.</p>
+    <p style="margin:0 0 24px;">Der gleiche Text erzeugt eine verwandte Grundstruktur, aber keine pixelgenaue Wiederholung. Die Topologie bleibt erkennbar, die konkrete Ausführung variiert. Das Bild ist daher weder Zufall noch Abbildung. Es ist eine Möglichkeit des Textes.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">DIE SCHIEBEREGLER</div>
+    <p style="margin:0 0 10px;">Die Regler sind keine bloße Nachbearbeitung. Sie bestimmen, wie der Chat als Bildkörper gelesen wird. Beim Auswerten eines Textes stellen sich die Schieberegler zunächst auf die erkannte Textstruktur ein. Ein kurzer, dünner Text beginnt anders als ein langer, stark vernetzter Chat. Danach bleiben alle Werte manuell veränderbar.</p>
+    <p style="margin:0 0 6px;"><b>Belebung</b> bestimmt, wie dicht das Bild bevölkert ist.</p>
+    <p style="margin:0 0 6px;"><b>Tempo</b> regelt, wie schnell der visuelle Prozess abläuft.</p>
+    <p style="margin:0 0 6px;"><b>Gedächtnis</b> steuert, wie stark Vergangenes im Bild bleibt. Bei hohen Werten sedimentieren Formen deutlicher.</p>
+    <p style="margin:0 0 6px;"><b>Zentren</b> legt fest, wie viele Motivzentren maximal aktiv werden können.</p>
+    <p style="margin:0 0 6px;"><b>Reifung</b> beeinflusst, wie schnell aus Textimpulsen sichtbare Formen entstehen.</p>
+    <p style="margin:0 0 6px;"><b>Verflechtung</b> bestimmt, wie stark Beziehungen zwischen Motiven sichtbar werden.</p>
+    <p style="margin:0 0 6px;"><b>Verschmelzung</b> regelt die Tendenz naher Formen, sich anzunähern oder zu verbinden.</p>
+    <p style="margin:0 0 6px;"><b>Spannung</b> verändert das Verhältnis von Konzentration und Streuung.</p>
+    <p style="margin:0 0 6px;"><b>Anziehung</b> skaliert die Gravitationskraft des Systems.</p>
+    <p style="margin:0 0 24px;"><b>Motivanker zeigen</b> blendet die technischen Gravitationspunkte ein.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">NACHBARSCHAFTEN</div>
+    <p style="margin:0 0 10px;"><i>Was reift, leuchtet</i> steht in der Nähe verschiedener Verfahren, ohne mit ihnen identisch zu sein. Es berührt Textvisualisierung und Distant Reading, semantische Netzwerkanalyse und Co-Occurrence-Modelle, dynamische Netzwerkvisualisierung und generative Kunst.</p>
+    <p style="margin:0 0 24px;">Das Ergebnis ist weder ein wissenschaftliches Instrument noch ein dekoratives Muster. Es liegt dazwischen: ein regelbasiertes Bildereignis, das einen Gedankengang sichtbar macht, ohne zu behaupten, ihn vollständig zu verstehen.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">GRENZE</div>
+    <p style="margin:0 0 10px;">Die Visualisierung behauptet nicht, einen Chat zu verstehen. Sie zeigt, was ihre Regeln aus dem Text gewinnen können: Wiederkehr, Verdichtung, Nähe, Spannung, Verschiebung, Sediment.</p>
+    <p style="margin:0 0 10px;"><i>Was reift, leuchtet</i> zeigt nicht, was ein Gespräch bedeutet.</p>
+    <p style="margin:0 0 32px;">Es zeigt, was in ihm wiederkehrt, was sich verbindet, was ruht — und was erneut zu leuchten beginnt.</p>
+    <div style="font:10px/1.4 ui-sans-serif,system-ui,sans-serif;color:rgba(200,168,75,.45);font-style:italic;text-align:center;">Was reift, leuchtet. — E. R. A. Hiller, 2026 — Alle Rechte vorbehalten</div>
+  </div>
+  <div class="overlay-en" style="display:none;max-width:660px;margin:48px auto 48px;padding:0 28px;color:rgba(220,225,255,.80);font:14px/1.75 Georgia,serif;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;">
+      <div>
+        <div style="font:bold 20px/1.3 Georgia,serif;color:rgba(230,235,255,.94);margin-bottom:5px;">What ripens, gleams</div>
+        <div style="font:12.5px/1.4 ui-sans-serif,system-ui,sans-serif;color:rgba(200,168,75,.75);font-style:italic;">A visualisation of chat conversations &middot; E. R. A. Hiller, 2026</div>
+      </div>
+      <button id="closeOverlayEN" style="background:none;border:1px solid rgba(200,210,255,.2);border-radius:6px;color:rgba(200,210,255,.5);font-size:18px;cursor:pointer;padding:2px 10px;line-height:1.4;flex-shrink:0;margin-left:20px;">&#x2715;</button>
+    </div>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">THOUGHT AS TOPOLOGY</div>
+    <p style="margin:0 0 10px;">A chat is more than a sequence of messages. It has an inner shape: thoughts emerge, are abandoned, return, branch, condense, or lose weight. Some terms appear only briefly. Others carry the conversation over longer stretches. Still others rest for a while and are taken up again later.</p>
+    <p style="margin:0 0 10px;"><i>What ripens, gleams</i> attempts to make this movement visible: not as a summary, not as an evaluation, and not as an illustration of particular contents, but as a spatio-temporal <b>topology of a line of thought</b>.</p>
+    <p style="margin:0 0 24px;">Topology here means: the order of proximity, recurrence, weighting and connection. What lies close together in the text, what repeats, what returns later or connects to other motifs, receives a spatial and temporal correspondence. A moving image field emerges from the course of the chat.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">METHOD</div>
+    <p style="margin:0 0 10px;">The entered text is examined locally in the browser. It is divided into segments, normalised, and evaluated for recurring words, motifs, distributions and relationships. What counts is not only how frequently a term appears, but also when it occurs, how far it extends through the conversation, with which other terms it stands in proximity, and whether it is taken up again later.</p>
+    <p style="margin:0 0 10px;">From these signals, motifs emerge. A motif here is neither an explanatory keyword nor a semantic interpretation, but a visual centre of gravity around which forms, movements, connections and sediments gather.</p>
+    <p style="margin:0 0 24px;">The method uses no language model and no external AI evaluation. It does not decide what a chat &ldquo;means&rdquo;. It reads texture: repetition, distance, proximity, density, tension, return. Therein lies its limit, but also its accuracy. The work does not understand the text as a human would; it makes visible the formal traces the text itself produces.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">FROM TEXT TO IMAGE BODY</div>
+    <p style="margin:0 0 10px;">The text is the skeleton of the visualisation. It determines the inner order: motifs, centres, relationships, impulses and phases of maturation. Once this structure has been evaluated, the text itself recedes. What remains is no longer a readable chat, but an image body that has emerged from it.</p>
+    <p style="margin:0 0 10px;">The visualisation therefore does not show the text as text. It shows what remains when its linguistic surface is removed: a moving topology of condensation, memory, recurrence and connection.</p>
+    <p style="margin:0 0 24px;">Thus a peculiar shift emerges. The chat is not explained, but transferred into another state. Sentences become forces. Repetitions become centres. Returns become reactivations. The past becomes sediment.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">WHAT HAPPENS IN THE IMAGE</div>
+    <p style="margin:0 0 10px;">At the beginning, individual forms appear, still loose and tentative. As the course unfolds, clusters emerge. Some condense, others remain peripheral, some recede. Between related motifs, filaments and travelling lights form. They mark relationships, transitions and renewed activations without turning them into a diagram.</p>
+    <p style="margin:0 0 10px;">The clusters not only move through the image; their forms can also rotate around shared centres. This rotation is conceived as an inner movement of a motif field. It leaves no trace of movement, but shifts and orders the cluster from within.</p>
+    <p style="margin:0 0 10px;">What disappears from the foreground is not deleted. It passes into a memory layer: as sediment, as a faint remainder, as a shell. When an earlier theme is taken up again later, parts of these sediments can begin to glow again. Memory thus appears not as an archive of finished signs, but as material that can rest, continue to resonate, and become active again.</p>
+    <p style="margin:0 0 24px;">The same text generates a related basic structure, but no pixel-precise repetition. The topology remains recognisable, while the concrete execution varies. The image is therefore neither pure chance nor depiction. It is a possibility of the text.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">THE SLIDERS</div>
+    <p style="margin:0 0 10px;">The sliders are not mere post-processing. They determine how the chat is read as an image body. When a text is evaluated, the sliders first adjust to the recognised text structure. A short, thin text begins differently from a long, strongly networked chat. Afterwards, all values remain manually adjustable.</p>
+    <p style="margin:0 0 6px;"><b>Vitality</b> — determines how densely populated the image is.</p>
+    <p style="margin:0 0 6px;"><b>Speed</b> — controls how quickly the visual process unfolds.</p>
+    <p style="margin:0 0 6px;"><b>Memory</b> — controls how strongly the past remains in the image. At high values, forms sediment more clearly.</p>
+    <p style="margin:0 0 6px;"><b>Centres</b> — sets how many motif centres can become active at most.</p>
+    <p style="margin:0 0 6px;"><b>Maturation</b> — influences how quickly visible forms emerge from textual impulses.</p>
+    <p style="margin:0 0 6px;"><b>Entanglement</b> — determines how strongly relationships between motifs become visible.</p>
+    <p style="margin:0 0 6px;"><b>Fusion</b> — controls the tendency of nearby forms to approach or connect with one another.</p>
+    <p style="margin:0 0 6px;"><b>Tension</b> — changes the relation between concentration and dispersal.</p>
+    <p style="margin:0 0 6px;"><b>Attraction</b> — scales the gravitational force of the system.</p>
+    <p style="margin:0 0 24px;"><b>Show motif anchors</b> — reveals the technical gravitational points of the construction.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">NEIGHBOURHOODS</div>
+    <p style="margin:0 0 10px;"><i>What ripens, gleams</i> is close to various procedures without being identical to them. It touches on text visualisation and distant reading, semantic network analysis and co-occurrence models, dynamic network visualisation and generative art.</p>
+    <p style="margin:0 0 24px;">The result is neither a scientific instrument nor a decorative pattern. It lies in between: a rule-based image event that makes a line of thought visible without claiming to understand it fully.</p>
+    <div style="color:rgba(200,168,75,.78);font:bold 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:1.3px;margin:0 0 9px;">LIMIT</div>
+    <p style="margin:0 0 10px;">The visualisation does not claim to understand a chat. It shows what its rules can extract from the text: recurrence, condensation, proximity, tension, displacement, sediment.</p>
+    <p style="margin:0 0 10px;"><i>What ripens, gleams</i> does not show what a conversation means.</p>
+    <p style="margin:0 0 32px;">It shows what recurs within it, what connects, what rests &mdash; and what begins to gleam again.</p>
+    <div style="font:10px/1.4 ui-sans-serif,system-ui,sans-serif;color:rgba(200,168,75,.45);font-style:italic;text-align:center;">What ripens, gleams. &mdash; E. R. A. Hiller, 2026 &mdash; All rights reserved</div>
+  </div>
+</div>
+</template>
+<script>
+(function(){
+'use strict';
+let currentLang='de';
+const STRINGS={
+  de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
+    analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
+    screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet. — Created by E. R. A. Hiller, 2026',creditTitle:'Erläuterung',
+    labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
+    labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung'},
+  en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
+    analyse:'Analyse chat',demo:'Demo',reset:'Reset',
+    screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
+    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams. — Created by E. R. A. Hiller, 2026',creditTitle:'Explanation',
+    labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
+    labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction'}
+};
+let _overlayEl=null;
+function _getOverlay(){
+  if(!_overlayEl){
+    const tmpl=document.getElementById('overlayTemplate');
+    if(!tmpl||!tmpl.content)return null;
+    const clone=tmpl.content.cloneNode(true);
+    document.body.appendChild(clone);
+    _overlayEl=document.getElementById('infoOverlay');
+    if(!_overlayEl)return null;
+    _overlayEl.style.display='none';
+    _overlayEl.addEventListener('click',e=>{if(e.target===_overlayEl)_closeOverlay();});
+    const c1=document.getElementById('closeOverlay');if(c1)c1.addEventListener('click',_closeOverlay);
+    const c2=document.getElementById('closeOverlayEN');if(c2)c2.addEventListener('click',_closeOverlay);
+  }
+  return _overlayEl;
+}
+function _closeOverlay(){const ov=_getOverlay();if(ov)ov.style.display='none';}
+window.setLang=function setLang(lang){
+  if(!STRINGS[lang])lang='de';
+  currentLang=lang;
+  document.documentElement.lang=lang;
+  const S=STRINGS[lang];
+  const text=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+  const prop=(id,key,value)=>{const el=document.getElementById(id);if(el)el[key]=value;};
+  document.title=S.title;
+  text('screenHint',S.screenHint);
+  text('label',S.label);
+  text('toggle',S.toggle);
+  prop('chat','placeholder',S.placeholder);
+  text('analyse',S.analyse);
+  text('demo',S.demo);
+  text('reset',S.reset);
+  text('showLabel',S.showLabel);
+  text('creditBtn',S.credit);
+  prop('creditBtn','title',S.creditTitle);
+  ['Density','Tempo','Memory','MaxCenters','Birth','Network','Fusion','Spannung','Attraction'].forEach(k=>text('label'+k,S['label'+k]));
+  if(_overlayEl){
+    const de=_overlayEl.querySelector('.overlay-de');
+    const en=_overlayEl.querySelector('.overlay-en');
+    if(de)de.style.display=lang==='de'?'':'none';
+    if(en)en.style.display=lang==='en'?'':'none';
+  }
+  updateStatus();
+  const deBtn=document.getElementById('langDE');if(deBtn)deBtn.style.opacity=lang==='de'?'1':'0.35';
+  const enBtn=document.getElementById('langEN');if(enBtn)enBtn.style.opacity=lang==='en'?'1':'0.35';
+};
+function hash(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+let seed='entwicklung-xix-demo';let R=mulberry32(hash(seed));
+function newLayoutSalt(){return Date.now().toString(36)+'-'+Math.floor(Math.random()*4294967295).toString(36);}
+// Text-Signatur: gleiche Eingabe erzeugt verwandte Topologie, aber keine pixelgleiche Kopie.
+let layoutSalt='topo-demo';        // stabiler Anteil: Raum/Relationen/Grundgeburten
+let variationSalt=newLayoutSalt(); // variabler Anteil: Mikroabweichungen und lebendige Ausfuehrung
+function textSignatureSalt(text,motifs){
+  const normalized=normalizeText(text||'').replace(/\s+/g,' ').trim();
+  const motifSig=(motifs||[]).map(m=>(m.word||'')+':'+(m.cat||'')+':'+Math.round((m.score||0)*10)).join('|');
+  return 'topo-'+hash(normalized+'|'+motifSig);
+}
+function updateTopologySalt(){layoutSalt=textSignatureSalt(analysis&&analysis.text?analysis.text:'',analysis&&analysis.motifs?analysis.motifs:[]);}
+function resetVariationSalt(){variationSalt=newLayoutSalt();}
+function layoutJitter(word,i,scale){
+  const base=Math.min(W||1200,H||700);
+  const h=hash((word||'motiv')+'|jitter|'+variationSalt+'|'+i);
+  const a=(h%6283)/1000;
+  const u=((h>>>11)%1000)/1000;
+  const r=base*(scale||.025)*(.25+.75*u);
+  return {x:Math.cos(a)*r,y:Math.sin(a)*r};
+}
+function withLayoutJitter(p,i,word,scale){
+  const j=layoutJitter(word,i,scale);
+  if(!(W&&H))return {x:p.x+j.x,y:p.y+j.y};
+  const b=visibleBounds(.060);
+  return {x:clamp(p.x+j.x,b.left,b.right),y:clamp(p.y+j.y,b.top,b.bottom)};
+}
+function rnd(n=1){return R()*n;}function rr(a,b){return a+rnd(b-a);}function ri(n){return Math.floor(rnd(n));}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}function mix(a,b,t){return a+(b-a)*t;}function dist(a,b,c,d){return Math.hypot(c-a,d-b);}function ease(x){return x*x*(3-2*x);} 
+function temperedWhite(c){return c.map(v=>clamp(v,0,255));}
+function rgba(c,a){c=temperedWhite(c);return 'rgba('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+','+clamp(a,0,.985)+')';}
+function blend(a,b,t){return temperedWhite([mix(a[0],b[0],t),mix(a[1],b[1],t),mix(a[2],b[2],t)]);}
+function saturate(c,k){const avg=(c[0]+c[1]+c[2])/3;return temperedWhite([avg+(c[0]-avg)*k,avg+(c[1]-avg)*k,avg+(c[2]-avg)*k]);}
+function lift(c,t){return blend(c,[242,247,255],t*(.85+.40*set.white));}
+function glow(c,t){return blend(saturate(c,1.20+.10*set.white),[255,255,255],t*(.90+.55*set.white));}
+function accentColor(c,type,x,y){const h=hash(type+'|'+Math.round(x)+'|'+Math.round(y));const accents=[[224,142,54],[184,72,138],[92,126,232],[230,218,156],[212,226,248]];return blend(saturate(c,1.22),accents[h%accents.length],.34+.16*((h>>>9)%100)/100);}
+function shadowColor(c,anchor,type){const h=hash((type||'form')+'|shadow|'+(anchor==null?'x':anchor)+'|'+Math.round(c[0])+'|'+Math.round(c[1])+'|'+Math.round(c[2]));const deep=[[8,11,32],[18,9,34],[10,20,48],[30,14,42],[12,24,36]][h%5];const sat=saturate(c,1.34);const t=.52+.12*((h>>>8)%100)/100;const out=blend(sat,deep,t);return [clamp(out[0]*(.82+.08*((h>>>3)%100)/100),14,162),clamp(out[1]*(.78+.08*((h>>>13)%100)/100),10,138),clamp(out[2]*(.88+.10*((h>>>20)%100)/100),24,192)];}
+let W=0,H=0,DPR=1,T=0,frame=0;const ctx={};const ids=['c-mem','c-live','c-fx','c-ui'];
+const set={density:.88,tempo:1,memory:1.25,maxCenters:6,birth:1.20,focus:1.12,side:.11,switchRate:.94,fusion:.6973,network:1.20,runlight:1.18,spider:.68,contrast:1.42,white:.78,attraction:1.60,zoom:2.585,show:false};
+const SIMULTANEITY=.70; // reduziert Gleichzeitigkeit, nicht Tempo
+const SEDIMENT_WAKE_DECAY=.982; // kurze Reaktivierung alter Sedimente, kein dauerhafter neuer Zustand
+const SEDIMENT_WAKE_COOLDOWN=520; // verhindert Flaechenblitzen bei schnellen Fokuswechseln
+const TERMINAL_HANDOFF_MOVING=.420; // bewegte Formen werden frueh genug uebergeben, aber nicht massenhaft im Vordergrund
+const TERMINAL_HANDOFF_STILL=.260;
+const TERMINAL_MOTION_EPS=.010;
+const TERMINAL_RETIRE_LIFE=.008; // erst bei fast unsichtbarer Resthelligkeit aus der Live-Ebene entfernen
+const TERMINAL_FINAL_HULL_LIFE=.180; // fruehere spaete Sicherung: kurz vor dem Verblassen wird der Rest nochmals fixiert
+const TERMINAL_RETIRE_DECAY=.00078; // weiches Ausklingen nach der Uebergabe ins Sediment
+const TERMINAL_HULL_RADIUS_FACTOR=1.42; // dezente Huelle: Erinnerungshaut statt Aura-Flaeche
+const TERMINAL_SHADOW_FLOOR=.155; // terminale Huelle klingt aus; ein schwacher, aber sichtbarer Schattenrest bleibt
+const TERMINAL_SHADOW_DECAY=.9978; // Schatten sinkt langsamer auf seinen Restwert
+function simChance(p){return p*SIMULTANEITY;}
+function simCap(n,min=1){return Math.max(min,Math.round(n*SIMULTANEITY));}
+function simCooldown(frames){return frames/SIMULTANEITY;}
+function simStimulusLimit(){return Math.max(6,Math.round(16*SIMULTANEITY));}
+let frameDt=1.0;
+function slowDt(){return clamp(frameDt,0,1);}
+function tempoDt(){return set.tempo*slowDt();}
+function memoryLevel(){return clamp(set.memory/1.25,.10,1.44);} // 1.0 bei Reglerwert 5; unten bis ca. 10% Erinnerung
+function contentActivityScale(){return analysis&&analysis.activityScale!=null?analysis.activityScale:1;}
+function contentImpulseScale(){const s=contentActivityScale();return clamp(.18+.82*s,.10,1);}
+function contentIsThin(){return !!(analysis&&analysis.thinInput);}
+const VISUAL_SHIFT_X=.030; // kleine optische Rechtskorrektur der gesamten Bildebene
+function sceneTransform(c){const z=set.zoom||1;c.translate(W*.5+W*VISUAL_SHIFT_X,H*.5);c.scale(z,z);c.translate(-W*.5,-H*.5);}
+function attractionLevel(){const raw=clamp(set.attraction==null?1.60:set.attraction,.002,3.40);return raw<=.004?raw:clamp(raw*1.50,.002,5.10);}
+function centerSpread(){return 1.50;}
+function visibleBounds(margin){
+  const m=margin||.075,z=Math.max(1e-3,set.zoom||1),shift=VISUAL_SHIFT_X||0;
+  const extra=Math.max(.060, .040*(z-1));
+  const extraTop=Math.max(.090, .055*(z-1));
+  // Bounds folgen dem tatsaechlich sichtbaren, gezoomten Ausschnitt inkl. optischer Rechtskorrektur.
+  const worldLeft=W*.5-W*(.5+shift)/z,worldRight=W*.5+W*(.5-shift)/z;
+  const worldTop=H*.5-H*.5/z,worldBottom=H*.5+H*.5/z;
+  const left0=worldLeft+W*(m+extra)/z,right0=worldRight-W*(m+extra)/z;
+  const top0=worldTop+H*(m+extraTop)/z,bottom0=worldBottom-H*(m+extra)/z;
+  return {
+    left:clamp(left0,W*(m+extra),W*.48),
+    right:clamp(right0,W*.52,W*(1-m-extra)),
+    top:clamp(top0,H*(m+extraTop),H*.48),
+    bottom:clamp(bottom0,H*.52,H*(1-m-extra))
+  };
+}
+function insetVisibleBounds(margin,pad){
+  const b=visibleBounds(margin||.075);
+  const w=Math.max(1,b.right-b.left),h=Math.max(1,b.bottom-b.top);
+  const px=Math.min(Math.max(0,pad||0),w*.46),py=Math.min(Math.max(0,pad||0),h*.46);
+  return {left:b.left+px,right:b.right-px,top:b.top+py,bottom:b.bottom-py};
+}
+function visiblePadForRadius(r,type){
+  const k=type==='spider'?2.25:(type==='fusion'?1.55:1.35);
+  return clamp((r||0)*k+5,6,Math.min(W,H)*.075);
+}
+function visibleEntitySoftBounds(e){return insetVisibleBounds(.026,visiblePadForRadius(e.r,e.type)*.72);}
+function containEntity(e,hard){
+  const b=insetVisibleBounds(.030,visiblePadForRadius(e.r,e.type));
+  const ox=e.x,oy=e.y;
+  e.x=clamp(e.x,b.left,b.right);e.y=clamp(e.y,b.top,b.bottom);
+  if(e.x!==ox){if((ox<b.left&&e.vx<0)||(ox>b.right&&e.vx>0))e.vx=0;else e.vx*=hard?0.20:0.42;}
+  if(e.y!==oy){if((oy<b.top&&e.vy<0)||(oy>b.bottom&&e.vy>0))e.vy=0;else e.vy*=hard?0.20:0.42;}
+}
+function keepLinkControlInFrame(x,y,pad){const b=insetVisibleBounds(.030,pad==null?20:pad);return {x:clamp(x,b.left,b.right),y:clamp(y,b.top,b.bottom)};}
+function resize(){W=document.body.clientWidth;H=document.body.clientHeight;DPR=Math.min(2,devicePixelRatio||1);ids.forEach(id=>{const c=document.getElementById(id);c.width=Math.max(1,W*DPR);c.height=Math.max(1,H*DPR);c.style.width=W+'px';c.style.height=H+'px';ctx[id]=c.getContext('2d');ctx[id].setTransform(DPR,0,0,DPR,0,0);});drawUI();}
+addEventListener('resize',resize);resize();
+
+const STOP=new Set(('aber alle als also am an auf aus bei bin bis bist das dass dem den der des die dies diese dieser dieses doch du ein eine einem einen einer eines er es fuer im in ist ja kann kein keine mit nicht noch nur oder sind so um und vom von vor war was weil wenn wie wir zu zum zur ich mich mir man mehr sehr schon hat habe haben wird werden wurde auch dann dort hier eher nach ueber über ohne durch gegen seine ihrer ihre sein sie ihm ihn uns euch').split(/\s+/));
+const DEMO='muster und struktur tauchen zuerst als unscharfer kern auf\nfrage und antwort verschieben den schwerpunkt nicht gleichmaessig\nkritik erzeugt einen kurzen gegenzug, danach stille und nachlauf\ngedaechtnis haelt einzelne formen, waehrend aktivitaet anderswo entsteht\nlauflicht verbindet zwei zentren, kehrt um, wird wieder leiser\nresonanz und form verdichten sich, aber nicht gleichzeitig ueberall\nspaeter kehrt das muster zurueck und spricht in weisseren kanten';
+const CAT_WORDS={
+  memory:/gedaechtnis|gedächtnis|erinner|bleib|spur|sediment|archiv|dauer|persist|verblas|ablager/,
+  structure:/struktur|muster|netz|verbindung|knoten|zentrum|zentren|kern|relation|system|ordnung/,
+  motion:/beweg|wechsel|verlager|lauflicht|aktiv|tempo|dynamik|wander|richtung|prozess|fluss/,
+  form:/form|amorph|farbe|weiss|weiß|stern|kristall|membran|kontur|verschmelz|gestalt/,
+  critique:/mangel|problem|kritik|schlecht|besser|wenig|viel|gleichzeitig|unabhaengig|unabhängig/,
+  question:/frage|warum|wieso|was|wie|woran|bedeut|meinst|eigentlich/
+};
+const CAT_TYPE={memory:'dense',structure:'cool',motion:'thought',form:'warm',critique:'dense',question:'thought',other:'cool'};
+const CAT_COLOR={memory:[92,56,150],structure:[48,78,178],motion:[70,98,188],form:[184,124,44],critique:[128,58,132],question:[78,92,184],other:[62,84,168]};
+
+const COUNTER_STOPS_BASE=[
+  {p:0.00,c:[52,86,204]},
+  {p:0.30,c:[104,60,176]},
+  {p:0.70,c:[205,132,40]},
+  {p:0.88,c:[224,236,255]},
+  {p:1.00,c:[54,98,206]}
+];
+function phaseBaseColor(p){
+  for(let i=1;i<COUNTER_STOPS_BASE.length;i++){
+    const a=COUNTER_STOPS_BASE[i-1],b=COUNTER_STOPS_BASE[i];
+    if(p<=b.p){const t=(p-a.p)/Math.max(.0001,b.p-a.p);return blend(a.c,b.c,t);}
+  }
+  return COUNTER_STOPS_BASE[COUNTER_STOPS_BASE.length-1].c.slice();
+}
+function buildCounterStops(entries,turns,segDominant,substance,demo){
+  // Der Balken ist ein Reifungsindikator. Bei substanzarmen Texteingaben
+  // bleibt er bewusst in einer kuehlen Keim-Faerbung: drei Worte erzeugen
+  // keine ausgepraegte Blau-Gold-Blau-Reifung. Bei tragfaehigen Chats darf
+  // die Textfaerbung deutlicher wirken, weil der Balken klein bleibt.
+  function catCol(cat){return CAT_COLOR[cat]||CAT_COLOR.other;}
+  const QUIET_COUNTER_STOPS=[
+    {p:0.00,c:[44,70,164]},
+    {p:0.30,c:[56,74,168]},
+    {p:0.70,c:[66,82,174]},
+    {p:0.88,c:[96,116,194]},
+    {p:1.00,c:[50,86,178]}
+  ];
+  function quietPhaseColor(p){
+    for(let i=1;i<QUIET_COUNTER_STOPS.length;i++){
+      const a=QUIET_COUNTER_STOPS[i-1],b=QUIET_COUNTER_STOPS[i];
+      if(p<=b.p){const t=(p-a.p)/Math.max(.0001,b.p-a.p);return blend(a.c,b.c,t);}
+    }
+    return QUIET_COUNTER_STOPS[QUIET_COUNTER_STOPS.length-1].c.slice();
+  }
+  function phaseTextColor(pos){
+    let acc=[0,0,0],tot=0;
+    for(const t of turns||[]){
+      const d=Math.abs((t.pos==null?pos:t.pos)-pos);
+      const w=Math.pow(clamp(1-d/.42,0,1),2)*(0.42+(t.intensity||.5));
+      if(w<=0)continue;
+      const c=catCol(t.cat||'other');
+      acc[0]+=c[0]*w;acc[1]+=c[1]*w;acc[2]+=c[2]*w;tot+=w;
+    }
+    for(const m of entries||[]){
+      const d=Math.abs((m.pos==null?0.5:m.pos)-pos);
+      const w=Math.pow(clamp(1-d/.50,0,1),2)*(.28+Math.min(1.2,(m.score||.3)*.18));
+      if(w<=0)continue;
+      const c=m.color||catCol(m.cat||'other');
+      acc[0]+=c[0]*w;acc[1]+=c[1]*w;acc[2]+=c[2]*w;tot+=w;
+    }
+    const seg=Math.min(3,Math.max(0,Math.floor(pos*4)));
+    const sc=catCol((segDominant&&segDominant[seg])||'other');
+    acc[0]+=sc[0]*.34;acc[1]+=sc[1]*.34;acc[2]+=sc[2]*.34;tot+=.34;
+    if(tot<=0)return phaseBaseColor(pos);
+    return [acc[0]/tot,acc[1]/tot,acc[2]/tot];
+  }
+  const s=demo?1:clamp(substance==null?1:substance,.03,1);
+  // Unterhalb dieser Schwelle bleibt die Balken-Farbdramaturgie ein Keim.
+  // Dadurch wirken sehr kurze Texte nicht so, als haetten sie eine volle Reifung durchlaufen.
+  const maturity=demo?1:ease(clamp((s-.20)/.58,0,1));
+  const textStrength=(demo?.16:.46)*maturity;
+  return COUNTER_STOPS_BASE.map(st=>{
+    const quiet=quietPhaseColor(st.p);
+    const base=blend(quiet,st.c,maturity);
+    const txt=phaseTextColor(st.p);
+    // Der Schluss bleibt eher kuehl: Textfarbe wirkt dort etwas leiser.
+    const w=st.p>.92?textStrength*.55:st.p>.86?textStrength*.72:textStrength;
+    const sat=1.02+.16*maturity;
+    const c=saturate(blend(base,txt,w),sat);
+    return {p:st.p,c:temperedWhite(c)};
+  });
+}
+function normalizeText(s){return (s||'').toLowerCase().replace(/[ä]/g,'ae').replace(/[ö]/g,'oe').replace(/[ü]/g,'ue').replace(/[ß]/g,'ss');}
+function categorize(word){for(const k in CAT_WORDS){if(CAT_WORDS[k].test(word))return k;}return 'other';}
+function tokenize(s){return normalizeText(s).match(/[a-z][a-z0-9_\-]{2,}/g)||[];}
+function hashUnit(key){return (hash(key)>>>0)/4294967296;}
+function hashSigned(key){return hashUnit(key)-.5;}
+function hashAngle(key){return hashUnit(key)*Math.PI*2;}
+const MACRO_ROTATION_DRIFT=Math.PI*.22; // begrenzte Laufdrift: gleiche Texte behalten ihre Grundausrichtung
+const MACRO_ANGLE_DRIFT=Math.PI*.18;    // begrenzte Motivdrift: verwandt, aber nicht pixelgleich
+function layoutTextRotation(){return hashAngle('layout-text-rotation|'+layoutSalt);}
+function layoutRunRotation(){return layoutTextRotation()+hashSigned('layout-run-drift|'+layoutSalt+'|'+variationSalt)*MACRO_ROTATION_DRIFT;}
+function motifTextAngle(word,i,slot){return hashAngle((word||'motiv')+'|'+(slot||'space')+'|'+layoutSalt+'|'+i);}
+function motifSpatialAngle(word,i,slot){
+  const stable=motifTextAngle(word,i,slot);
+  const drift=hashSigned((word||'motiv')+'|'+(slot||'space')+'|angle-drift|'+variationSalt+'|'+i)*MACRO_ANGLE_DRIFT;
+  return stable+drift;
+}
+function parentBirthBaseAngle(parent,m,i){
+  const base=Math.min(W,H);
+  const nearCenter=parent&&dist(parent.x,parent.y,W*.5,H*.5)<base*.095;
+  if(nearCenter)return motifSpatialAngle(m&&m.word?m.word:i,i,'central-parent-birth');
+  return parent?Math.atan2(parent.y-H*.5,parent.x-W*.5):motifSpatialAngle(m&&m.word?m.word:i,i,'orphan-birth');
+}
+function sparsePoint(i,n,word){
+  // Die Makroposition eines Motivzentrums ist wieder staerker textsignaturgebunden.
+  // Neue Auswertungen/Resets verschieben nur begrenzt: verwandt, aber nicht pixelgleich.
+  // Die Richtung kommt aus Text/Motiv, nicht aus einem festen Links-Rechts-Indexschema.
+  const h=hash((word||'motiv')+'|raum|'+layoutSalt);
+  const base=Math.min(W,H);
+  if(i===0){
+    const a=(h%6283)/1000;
+    const rad=base*(.018+.038*((h>>>9)%1000)/1000);
+    return withLayoutJitter({
+      x:clamp(W*.50+Math.cos(a)*rad*1.18,W*.38,W*.62),
+      y:clamp(H*.50+Math.sin(a)*rad*.86,H*.40,H*.60)
+    },i,word,.010);
+  }
+  const a=layoutRunRotation()+i*2.399963+motifSpatialAngle(word,i,'motif-ring')*.42+((h>>>17)%1000)/1000*.52;
+  // Raumspreizung: weiterhin weit, aber mit laufabhaengiger Rotation und Radiusvariation.
+  const radiusSeed=((h>>>5)%1000)/1000;
+  const desired=base*(.14+.25*radiusSeed)*2.05;
+  const sx=1.02,sy=1.02;
+  const mx=W*.50-W*.065,my=H*.50-H*.095;
+  const maxByX=mx/(Math.abs(Math.cos(a))*sx+.035);
+  const maxByY=my/(Math.abs(Math.sin(a))*sy+.035);
+  const maxRad=Math.max(base*.18,Math.min(maxByX,maxByY)*(.82+.14*((h>>>22)%1000)/1000));
+  const rad=clamp(desired*(.88+.24*((h>>>11)%1000)/1000),base*.20,maxRad);
+  let x=W*.50+Math.cos(a)*rad*sx;
+  let y=H*.50+Math.sin(a)*rad*sy;
+  x=clamp(x,W*.065,W*.935);y=clamp(y,H*.095,H*.885);
+  return withLayoutJitter({x,y},i,word,.030);
+}
+function refreshMotifLayout(){
+  if(!analysis||!analysis.motifs)return;
+  const n=analysis.motifs.length;
+  for(let i=0;i<n;i++){
+    const p=sparsePoint(i,n,analysis.motifs[i].word);
+    analysis.motifs[i].x=p.x;
+    analysis.motifs[i].y=p.y;
+  }
+}
+function analyseText(text,demo){const raw=(text||'').trim();const source=raw||DEMO;const lines=source.split(/\n+/).filter(Boolean);const tokens=tokenize(source).filter(w=>w.length>3&&!STOP.has(w));const freq=new Map(),first=new Map(),last=new Map(),lineHit=new Map();tokens.forEach((w,i)=>{freq.set(w,(freq.get(w)||0)+1);if(!first.has(w))first.set(w,i);last.set(w,i);});lines.forEach((ln,li)=>{const seen=new Set(tokenize(ln).filter(w=>w.length>3&&!STOP.has(w)));seen.forEach(w=>{if(!lineHit.has(w))lineHit.set(w,[]);lineHit.get(w).push(li);});});let rawEntries=[...freq.keys()].map(w=>{const f=freq.get(w);const span=(last.get(w)-first.get(w))/Math.max(1,tokens.length-1);const cat=categorize(w);let score=f*(1+.85*span)+(cat==='other'?0:.9)+Math.min(2,(lineHit.get(w)||[]).length*.22);return {word:w,freq:f,first:first.get(w),last:last.get(w),span,cat,type:CAT_TYPE[cat]||'cool',score};});
+  rawEntries=rawEntries.sort((a,b)=>b.score-a.score);
+  const rawMotifCount=rawEntries.length;
+  const repeatCount=[...freq.values()].filter(v=>v>1).length;
+  const punctuationCount=(source.match(/[?!]/g)||[]).length;
+  const substance=demo?1:clamp(clamp(tokens.length/55,0,1)*.40+clamp(rawMotifCount/8,0,1)*.30+clamp(lines.length/6,0,1)*.20+clamp(repeatCount/4,0,1)*.08+clamp(punctuationCount/4,0,1)*.02,.03,1);
+  const thinInput=!demo&&substance<.42;
+  const fragmentInput=!demo&&substance<.24;
+  const thinLimit=demo?14:(fragmentInput?1:(thinInput?Math.min(3,Math.max(1,Math.round(1+substance*4))):14));
+  let entries=rawEntries.slice(0,thinLimit);
+  if(entries.length<4&&demo){['muster','gedaechtnis','bewegung','form','zentrum','wechsel'].forEach((w,i)=>entries.push({word:w,freq:1,first:i,last:i+2,span:.25,cat:categorize(w),type:CAT_TYPE[categorize(w)],score:.7-i*.04}));}
+  if(entries.length<1){entries.push({word:'fragment',freq:1,first:0,last:0,span:0,cat:'other',type:'cool',score:.12});}
+  // Verlaufsdimension: Text in vier Segmente teilen, jedes separat gewichten
+  const segCount=4;const segSize=Math.max(1,Math.ceil(tokens.length/segCount));
+  function segOf(tokenIndex){return Math.min(segCount-1,Math.floor(tokenIndex/segSize));}
+  // Segmentprofil: Dichte und dominante Kategorie pro Segment
+  const segCats=Array.from({length:segCount},()=>({}));
+  tokens.forEach((w,i)=>{if(STOP.has(w)||w.length<=3)return;const cat=categorize(w);const s=segOf(i);segCats[s][cat]=(segCats[s][cat]||0)+1;});
+  const segDominant=segCats.map(sc=>{let best='other',bv=0;for(const k in sc){if(sc[k]>bv){bv=sc[k];best=k;}}return best;});
+  // Lexikalische Dichte pro Segment (Type-Token-Ratio als Komplexitätsmaß)
+  const segTokens=Array.from({length:segCount},()=>({all:0,unique:new Set()}));
+  tokens.forEach((w,i)=>{if(w.length<=3||STOP.has(w))return;const s=segOf(i);segTokens[s].all++;segTokens[s].unique.add(w);});
+  const segDensity=segTokens.map(st=>st.all>0?clamp(st.unique.size/st.all,0.3,1.0):0.5);
+  // Satzkomplexität pro Segment: Verhältnis langer zu kurzer Sätze
+  const segLines=Array.from({length:segCount},()=>({long:0,short:0}));
+  lines.forEach((ln,li)=>{const s=Math.min(segCount-1,Math.floor(li/Math.max(1,Math.ceil(lines.length/segCount))));const wc=tokenize(ln).length;if(wc>12)segLines[s].long++;else segLines[s].short++;});
+  const segComplexity=segLines.map(sl=>{const total=sl.long+sl.short;return total>0?clamp(sl.long/total,0,1):0.5;});
+
+  entries=entries.slice(0,12).map((m,i)=>{const p=sparsePoint(i,entries.length,m.word);const relBirth=clamp((m.first||0)/Math.max(1,tokens.length-1),0,1);
+  // Geburtszeit durch Verlauf informiert: frühe Motive entstehen früher, späte später
+  const seg=segOf(m.first||0);const segWeight=segDensity[seg]||0.5;
+  return {...m,x:p.x,y:p.y,pos:relBirth,birth:i===0?0:Math.round(80+i*135+relBirth*80),
+  segDensity:segWeight,segCat:segDominant[seg],color:temperedWhite(blend(CAT_COLOR[m.cat]||CAT_COLOR.other,[70+ri(40),82+ri(38),150+ri(46)],.14)),profile:null};});
+
+  // Beziehungsnaehe der Motive: keine KI-Deutung, sondern lokale Textsignale
+  // (gemeinsame Abschnitte, zeitliche Naehe, Kategorie, Spannenueberlappung).
+  const relations=Array.from({length:entries.length},(_,i)=>Array.from({length:entries.length},(_,j)=>i===j?1:0));
+  for(let i=0;i<entries.length;i++){
+    for(let j=i+1;j<entries.length;j++){
+      const A=entries[i],B=entries[j];
+      const ah=lineHit.get(A.word)||[],bh=lineHit.get(B.word)||[];
+      const sa=new Set(ah);let common=0;for(const v of bh){if(sa.has(v))common++;}
+      const co=common>0?common/Math.sqrt(Math.max(1,ah.length)*Math.max(1,bh.length)):0;
+      const midA=((A.first||0)+(A.last||0))*.5,midB=((B.first||0)+(B.last||0))*.5;
+      const time=1-Math.abs(midA-midB)/Math.max(1,tokens.length);
+      const lo=Math.max(A.first||0,B.first||0),hi=Math.min(A.last||0,B.last||0);
+      const spanAll=Math.max(1,Math.max(A.last||0,B.last||0)-Math.min(A.first||0,B.first||0));
+      const overlap=clamp((hi-lo)/spanAll,0,1);
+      const sameCat=A.cat===B.cat?.22:(A.type===B.type?.10:0);
+      const segNear=Math.abs(segOf(A.first||0)-segOf(B.first||0))<=1?.08:0;
+      const prefix=(A.word.slice(0,4)===B.word.slice(0,4)||A.word.includes(B.word)||B.word.includes(A.word))?.12:0;
+      const rel=clamp(co*.62+time*.18+overlap*.16+sameCat+segNear+prefix,0,1);
+      relations[i][j]=relations[j][i]=rel;
+    }
+  }
+
+  let turnLines=lines.slice();if(turnLines.length<3){const words=source.split(/\s+/).filter(Boolean);turnLines=[];const chunk=Math.max(5,Math.ceil(words.length/7));for(let i=0;i<words.length;i+=chunk)turnLines.push(words.slice(i,i+chunk).join(' '));}
+  const motifIndex=new Map(entries.map((e,i)=>[e.word,i]));
+  const totalTurnLines=turnLines.length;
+  const turns=turnLines.map((ln,li)=>{const ws=tokenize(ln).filter(w=>w.length>3&&!STOP.has(w));let hits=new Map();ws.forEach(w=>{if(motifIndex.has(w))hits.set(motifIndex.get(w),(hits.get(motifIndex.get(w))||0)+1);});let anchor=li%entries.length,score=-1;hits.forEach((v,k)=>{if(v>score){score=v;anchor=k;}});let cat='other';for(const w of ws){cat=categorize(w);if(cat!=='other')break;}const q=/[?？]|warum|wieso|wie |was |meinst/i.test(ln);const neg=/aber|nicht|kein|doch|kritik|problem|mangel|zu viel|zu wenig/i.test(ln);const emph=/!|klar|stark|entscheid|genau|besser|schön|schoen/i.test(ln);if(q)cat='question';if(neg)cat='critique';
+  // Verlaufsposition: Anfang, Mitte, Ende tragen unterschiedliche Impulse
+  const pos=li/Math.max(1,totalTurnLines-1); // 0=Anfang, 1=Ende
+  const seg=Math.min(segCount-1,Math.floor(pos*segCount));
+  const sDensity=segDensity[seg]||0.5;
+  const sComplexity=segComplexity[seg]||0.5;
+  const sDominant=segDominant[seg]||'other';
+  // Intensität durch Verlauf gewichtet: Dichte und Komplexität des Segments fließen ein
+  const len=ws.length;
+  let intensity=clamp(.34+Math.log(1+len)*.13+(q?.18:0)+(neg?.22:0)+(emph?.12:0)+(score>0?.12:0)+sDensity*.14+sComplexity*.10,.28,1.12);if(thinInput)intensity=clamp(intensity*(.30+.70*substance),.08,.58);
+  // Interval: komplexe Segmente halten länger
+  const interval=Math.round(150+Math.min(520,len*22)+((q||neg)?130:0)+((li%3)===1?90:0)+sComplexity*80);
+  let white=clamp(.34+(q?.22:0)+(neg?.18:0)+(emph?.20:0)+Math.min(.22,len/50)+sDensity*.08,.30,1.0);if(thinInput)white=clamp(white*(.45+.55*substance),.10,.62);
+  const localPriority=q||neg||emph;
+  const turnType=localPriority?(CAT_TYPE[cat]||'cool'):(CAT_TYPE[sDominant]||CAT_TYPE[cat]||'cool');
+  // Fortschrittsgebundene Leseposition: Turn-Impulse werden ueber den sichtbaren
+  // Counter-Verlauf verteilt, nicht nur nach Frame-Intervallen abgefeuert.
+  // Dadurch entsteht nach der Anfangsbildung kein langes Aktivitaetsloch.
+  const fireP=clamp(.045+pos*.785+(localPriority?.010:0)+(sComplexity-.5)*.018,.040,.855);
+  return {line:ln,anchor,cat,type:turnType,intensity,interval,white,words:ws,pos,seg,fireP};});
+  // Wirksamer Umfang: nicht nur Textlaenge, sondern verarbeitbare Musterstruktur.
+  // Kurze/duenne Texte laufen nahe 3 Minuten, dichte/umfangreiche Texte nahe 5 Minuten.
+  const avgImpulse=turns.reduce((s,t)=>s+(t.intensity||0),0)/Math.max(1,turns.length);
+  const turnScore=clamp(turns.length/34,0,1);
+  const tokenScore=clamp(tokens.length/650,0,1);
+  const motifScore=clamp(entries.length/14,0,1);
+  const impulseScore=clamp(avgImpulse/1.05,0,1);
+  const runScopeRaw=clamp(turnScore*.42+tokenScore*.30+motifScore*.16+impulseScore*.12,0,1);
+  const runScope=demo?runScopeRaw:clamp(runScopeRaw*(.30+.70*substance),0,1);
+  const targetRunMs=Math.round(180000+ease(runScope)*120000);
+  const activityScale=demo?1:clamp(.10+.90*ease(substance),.10,1);
+  const counterStops=buildCounterStops(entries,turns,segDominant,substance,demo);
+  return {demo:!!demo,text:source,tokenCount:tokens.length,lineCount:lines.length,rawMotifCount,repeatCount,punctuationCount,fragmentInput,substance,thinInput,activityScale,avgImpulse,motifs:entries,relations,turns,runScope,targetRunMs,counterStops,seed:'entwicklung-xix-'+hash(source+'|'+entries.map(e=>e.word).join(','))};}
+let analysis=analyseText('',true);
+function updateStatus(){const st=document.getElementById('status');if(!st)return;const S=STRINGS[currentLang||'de'];st.textContent=analysis.demo?S.statusDemo:(analysis.thinInput?S.statusThin:S.statusChat);}
+
+const TYPE_COLOR={cool:()=>[46+ri(40),82+ri(44),194+ri(48)],warm:()=>[212+ri(40),120+ri(48),32+ri(44)],thought:()=>[78+ri(48),94+ri(50),210+ri(45)],dense:()=>[112+ri(58),46+ri(42),166+ri(62)],fusion:()=>[162+ri(62),118+ri(60),194+ri(54)],spider:()=>[188+ri(42),200+ri(38),236+ri(20)]};
+const BASE_WEIGHTS={cool:.0083,thought:.0069,warm:.00705,dense:.0025,spider:.0027};
+function profile(type,word){const h=hash((word||'')+type),u=(h%997)/997,v=((h>>>10)%997)/997,w0=((h>>>20)%997)/997;const base={cool:{n:19,a:.22,b:.13,c:.08,stretch:.20},warm:{n:16,a:.30,b:.18,c:.11,stretch:.12},thought:{n:22,a:.34,b:.22,c:.13,stretch:.18},dense:{n:18,a:.25,b:.17,c:.12,stretch:.28},fusion:{n:25,a:.28,b:.21,c:.15,stretch:.18},spider:{n:13,a:.18,b:.12,c:.08,stretch:.34}}[type]||{n:18,a:.25,b:.16,c:.10,stretch:.15};return {type,uid:u,n:base.n+(h%4)-1,phase:rnd(Math.PI*2),f1:2.13+u*1.55,f2:4.42+v*2.05,f3:7.15+w0*2.85,f4:1.55+((h>>>3)%997)/997*1.35,a1:base.a*mix(.82,1.18,u),a2:base.b*mix(.82,1.20,v),a3:base.c*mix(.75,1.25,w0),a4:.055+v*.075,twist:.10+u*.24,twF:1.45+v*2.4,sx:1+(u-.5)*base.stretch,sy:1+(v-.5)*base.stretch,skew:(w0-.5)*.18};}
+function fuseProfile(a,b){const p=profile('fusion','fusion');p.uid=(a.uid*.55+b.uid*.45+rnd(.09))%1;p.phase=(a.phase+b.phase)*.5+rr(-.28,.28);p.n=clamp(Math.round((a.n+b.n)/2)+2,18,30);p.f1=(a.f1+b.f1)*.5+rr(-.12,.12);p.f2=(a.f2+b.f2)*.5+rr(-.18,.18);p.f3=(a.f3+b.f3)*.5+rr(-.22,.22);p.a1=(a.a1+b.a1)*.53;p.a2=(a.a2+b.a2)*.58;p.a3=(a.a3+b.a3)*.63;p.sx=(a.sx+b.sx)*.5;p.sy=(a.sy+b.sy)*.5;p.skew=(a.skew+b.skew)*.5;return p;}
+function relShape(r,p,morph,scale=1){const pts=[];const n=clamp(Math.round(p.n),10,36);const breath=1+Math.sin(morph*.31+p.uid*6.1)*.025;for(let i=0;i<n;i++){const f=i/n;const base=f*Math.PI*2;const tw=Math.sin(base*p.twF+morph*(.25+.55*p.uid)+p.uid*4.9)*p.twist;const a=base+p.phase+tw+Math.sin(base*.73+p.uid*5.2)*.04;const n1=Math.sin(a*p.f1+morph*.72+p.uid*3.7)*p.a1;const n2=Math.cos(a*p.f2-morph*.43+p.uid*5.2)*p.a2;const n3=Math.sin(a*p.f3+morph*.31-p.uid*2.8)*p.a3;const n4=Math.cos(a*p.f4*(.8+p.uid*.55)+morph*.18+p.uid*1.9)*p.a4;const rr0=r*scale*breath*Math.max(.25,1+n1+n2+n3+n4);const x=Math.cos(a)*rr0*p.sx+Math.cos(a*1.7+p.uid*4.2)*rr0*p.skew*.14;const y=Math.sin(a)*rr0*p.sy+Math.sin(a*1.35+p.uid*2.9)*rr0*p.skew*.14;pts.push([x,y]);}return pts;}
+function translated(cx,cy,rel){const out=[];for(const p of rel)out.push([cx+p[0],cy+p[1]]);return out;}
+function curve(c,pts){if(!pts||pts.length<3)return;c.beginPath();const n=pts.length;c.moveTo((pts[0][0]+pts[n-1][0])*.5,(pts[0][1]+pts[n-1][1])*.5);for(let i=0;i<n;i++){const p=pts[i],nx=pts[(i+1)%n];c.quadraticCurveTo(p[0],p[1],(p[0]+nx[0])*.5,(p[1]+nx[1])*.5);}c.closePath();}
+function drawClosed(c,cx,cy,rel,color,alpha,fillAlpha,lineW){const pts=translated(cx,cy,rel);curve(c,pts);if(fillAlpha>0){c.fillStyle=rgba(color,alpha*fillAlpha);c.fill();}c.strokeStyle=rgba(color,alpha);c.lineWidth=lineW;c.stroke();}
+function drawMembrane(c,cx,cy,r,p,color,alpha,morph){const rel=relShape(r,p,morph);drawClosed(c,cx,cy,rel,color,alpha*.72,.11,.62);const inner=relShape(r*.50,p,morph+1.7,.96);drawClosed(c,cx,cy,inner,lift(color,.08),alpha*.105,.012,.16);}
+function spiderLegPath(c,cx,cy,r,color,alpha,uid,phase,morph,legs,scale){const n=legs||8;for(let i=0;i<n;i++){const f=i/n;const a=phase+f*Math.PI*2+Math.sin(morph*.25+i*1.73+uid*6.2)*.20+Math.sin(f*5.1+uid)*.10;const side=(i%2?1:-1);const baseR=r*(.36+.05*Math.sin(i+uid*7));const len=r*scale*(.82+.38*Math.sin(i*2.17+uid*8.1)+.18*Math.sin(morph*.19+i));const sx=cx+Math.cos(a)*baseR,sy=cy+Math.sin(a)*baseR;const ex=cx+Math.cos(a)*len,ey=cy+Math.sin(a)*len;const ca=a+side*(.45+.20*Math.sin(morph*.21+uid*4+i));const cpD=len*(.42+.10*Math.sin(i*1.9+uid));const qx=cx+Math.cos(ca)*cpD,qy=cy+Math.sin(ca)*cpD;c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(qx,qy,ex,ey);c.strokeStyle=rgba(color,alpha*(.30+.18*Math.sin(i+uid*5)));c.lineWidth=.22+alpha*.42;c.stroke();if(i%3===1){const ba=a+side*(.34+.12*Math.sin(uid*9+i));const bl=len*(.18+.06*Math.sin(i+uid));c.beginPath();c.moveTo(ex,ey);c.lineTo(ex+Math.cos(ba)*bl,ey+Math.sin(ba)*bl);c.strokeStyle=rgba(lift(color,.12),alpha*.16);c.lineWidth=.18+alpha*.20;c.stroke();}}}
+function drawSpiderNode(c,cx,cy,r,p,color,alpha,morph,uid){const spinDir=uid<.5?-1:1;const phase=p.phase+uid*Math.PI*2+spinDir*morph*.12;spiderLegPath(c,cx,cy,r,color,alpha*.78,uid,phase,morph,7+Math.floor(uid*4),1.55);const body=relShape(r*.46,p,morph+.7,.72);drawClosed(c,cx,cy,body,color,alpha*.72,.14,.48);const lobe=relShape(r*.28,p,morph+2.4,.55);drawClosed(c,cx+Math.cos(phase)*r*.23,cy+Math.sin(phase)*r*.16,lobe,lift(color,.07),alpha*.20,.035,.18);}
+function drawSpiderTrace(c,d,alpha){const uid=d.spinUid||.5;const spinDir=uid<.5?-1:1;const phase=(d.spinPhase||0)+spinDir*(T*.0018+d.age*.0022);spiderLegPath(c,d.x,d.y,d.r*.82,d.color,alpha*.70,uid,phase,T*.006+d.age*.012,6+Math.floor(uid*4),1.45);drawClosed(c,d.x,d.y,d.rel,d.color,alpha*.70,.10,.46);}
+
+function drawSedimentShadow(c,p,d,base,acc,al,wake){
+  if(!d.terminal)return;
+  const s=clamp(d.shadow||0,0,1);
+  if(s<=.004)return;
+  const ph=d.hullPhase||d.spinPhase||0;
+  const targetR=d.shadowR||d.hullR||d.r*1.42;
+  const grow=Math.max(1.025,targetR/Math.max(1,d.r))*(1+.005*Math.sin(T*.0008+ph));
+  const rel=d.rel.map((q,i)=>{
+    const n=1+.014*Math.sin(i*1.73+ph+d.age*.0018)+.009*Math.cos(i*2.41+ph*1.7+d.age*.0012);
+    return [q[0]*grow*n,q[1]*grow*n];
+  });
+  const ml=memoryLevel();
+  const col=blend(blend(saturate(base,.92),acc,.075),[205,212,255],.035);
+  const a=clamp((.0095+.0130*s)*Math.max(.70,ml)+wake*.0015,.0085,.0240);
+  c.save();
+  c.lineCap='round';
+  c.lineJoin='round';
+  drawClosed(c,p.x,p.y,rel,col,a,0,Math.max(.14,d.r*.014));
+  const rel2=rel.map(q=>[q[0]*1.010,q[1]*1.010]);
+  drawClosed(c,p.x,p.y,rel2,blend(col,[220,222,245],.070),a*.38,0,Math.max(.075,d.r*.007));
+  c.restore();
+}
+
+function drawSedimentHull(c,p,d,base,acc,al,wake){
+  const terminal=!!d.terminal;
+  const h=clamp(d.hull||0,0,1);
+  if(h<=.018)return;
+  const v=terminal?Math.max(h,.12):h;
+  const ph=d.hullPhase||d.spinPhase||0;
+  const targetR=d.hullR||d.r*(terminal?(1.58+.18*v):(1.30+.16*v));
+  const grow=Math.max(1.04,targetR/Math.max(1,d.r))*(1+.012*Math.sin(T*.0010+ph));
+  const rel=d.rel.map((q,i)=>{
+    const n=1+.028*Math.sin(i*1.73+ph+d.age*.0038)+.018*Math.cos(i*2.41+ph*1.7+d.age*.0021);
+    return [q[0]*grow*n,q[1]*grow*n];
+  });
+  const col=saturate(blend(base,acc,.16),1.04+.06*v);
+  const edge=blend(col,[236,241,255],terminal?.070:.045);
+  const outerA=clamp(al*(.050+.045*v)+wake*.004,terminal?.0035:.003,terminal?.036:.026);
+  const innerA=clamp(al*(.020+.030*v)+wake*.003,terminal?.0018:.0015,terminal?.018:.014);
+  c.save();
+  c.lineCap='round';
+  c.lineJoin='round';
+  c.shadowBlur=Math.max(.18,d.r*(.030+.018*v));
+  c.shadowColor=rgba(col,outerA*.28);
+  drawClosed(c,p.x,p.y,rel,col,outerA,0,Math.max(.13,d.r*(.016+.010*v)));
+  c.shadowBlur=0;
+  const rel2=rel.map(q=>[q[0]*(1.012+.010*v),q[1]*(1.012+.010*v)]);
+  drawClosed(c,p.x,p.y,rel2,edge,innerA,0,Math.max(.07,d.r*(.009+.006*v)));
+  c.restore();
+}
+
+function drawLiveHandoffHull(c,cx,cy,r,p,color,life,morph,uid){
+  const q=clamp((.16-life)/.16,0,1);
+  if(q<=.010)return;
+  const phase=(p.phase||0)+(uid||0)*Math.PI*2;
+  const rel=relShape(r*1.28,p,morph+1.15,.98).map((pt,i)=>{
+    const n=1+.022*Math.sin(i*1.61+phase+T*.0018)+.014*Math.cos(i*2.23+phase*1.4+T*.0011);
+    return [pt[0]*n,pt[1]*n];
+  });
+  const col=saturate(blend(color,[230,235,255],.08),1.03);
+  const a=clamp(.010+.026*q,.010,.036);
+  c.save();
+  c.lineCap='round';
+  c.lineJoin='round';
+  drawClosed(c,cx,cy,rel,col,a,0,Math.max(.10,r*.016));
+  const rel2=rel.map(pt=>[pt[0]*1.010,pt[1]*1.010]);
+  drawClosed(c,cx,cy,rel2,blend(col,[238,242,255],.08),a*.42,0,Math.max(.06,r*.008));
+  c.restore();
+}
+
+function anchorGravityFromMotif(m,i){const h=hash((analysis.seed||'seed')+'|'+layoutSalt+'|grav|'+(m.word||i)+'|'+i);const u=(h%10000)/10000;const freq=clamp(Math.log(1+(m.freq||1))/2.25,0,1);const span=clamp(m.span||0,0,1);const score=clamp((m.score||0)/12,0,1);const catBonus={critique:.16,question:.12,motion:.11,memory:.10,structure:.06,form:.02,other:0}[m.cat]||0;return clamp(.42+span*.42+freq*.24+score*.22+catBonus+(u-.5)*.82-Math.min(i,8)*.018,.34,1.90);}
+function anchorGravity(i){const a=anchors[i];return a?clamp(a.gravity||1,.25,2.10):1;}
+function anchorMobilityFromMotif(m,i){const h=hash((analysis.seed||'seed')+'|'+layoutSalt+'|mob|'+(m.word||i)+'|'+i);const u=(h%10000)/10000;const cat={motion:.18,question:.10,critique:.07,form:.04,structure:.00,memory:-.05,other:.02}[m.cat]||0;const remote=(m.span||0)<.18?.05:0;return clamp(.30+u*.58+cat+remote-Math.min(i,8)*.008,.22,1.12);}
+
+function anchorFieldVector(x,y,home){let vx=0,vy=0,w=0;const n=activeCount(),base=Math.min(W,H);for(let i=0;i<n;i++){const a=anchors[i];if(!a)continue;const g=anchorGravity(i),dx=a.x-x,dy=a.y-y,d=Math.hypot(dx,dy)+1;const range=base*(.12+.105*g);const q=Math.exp(-(d*d)/(range*range))*g*(i===home?1.05:.78);if(q<.010)continue;const sign=(hash((a.word||i)+'|field')%2)?1:-1;const tangent=.34+.22*g;vx+=(dx/d*.58+(-dy/d)*tangent*sign)*q;vy+=(dy/d*.58+(dx/d)*tangent*sign)*q;w+=q;}if(w<=0)return {x:0,y:0,w:0};return {x:vx/w,y:vy/w,w:clamp(w,0,1.8)};}
+function fieldControlPoint(x0,y0,x1,y1,cx,cy,home,strength){const f=anchorFieldVector((x0+x1)*.5,(y0+y1)*.5,home);if(f.w>.01){const s=(strength||1)*set.network*(6+14*f.w);cx+=f.x*s;cy+=f.y*s;}return {x:cx,y:cy};}
+function seedFieldFilaments(anchor,count,strength){const a=anchors[anchor];if(!a||set.network<.25)return;const cscale=contentImpulseScale();const g=anchorGravity(anchor),n=Math.max(0,Math.round((count||1)*(.55+.45*cscale)*SIMULTANEITY));for(let k=0;k<n;k++){const rad=Math.min(W,H)*rr(.048,.108)*(0.85+g*.25);const ang=rr(0,Math.PI*2),span=rr(.55,1.10),sign=(hash((a.word||anchor)+'|seed|'+k+'|'+layoutSalt)%2)?1:-1;const x0=clamp(a.x+Math.cos(ang-span*.5)*rad*rr(.78,1.18),W*.04,W*.96);const y0=clamp(a.y+Math.sin(ang-span*.5)*rad*rr(.78,1.18),H*.05,H*.95);const x1=clamp(a.x+Math.cos(ang+span*.5)*rad*rr(.86,1.34),W*.04,W*.96);const y1=clamp(a.y+Math.sin(ang+span*.5)*rad*rr(.86,1.34),H*.05,H*.95);let cx=(x0+x1)*.5+Math.cos(ang+sign*Math.PI*.5)*rad*(.18+.20*g)*(strength||1);let cy=(y0+y1)*.5+Math.sin(ang+sign*Math.PI*.5)*rad*(.18+.20*g)*(strength||1);const fp=fieldControlPoint(x0,y0,x1,y1,cx,cy,anchor,.70+.34*g);cx=fp.x;cy=fp.y;filaments.push(bindFilamentRoot({x0,y0,cx,cy,x1,y1,color:blend(saturate(a.color,1.12),[238,242,255],.20+.08*g),life:clamp(.70+g*.12+rnd(.18),.55,1.05),decay:rr(.0032,.0066)/(0.82+set.memory*.28),w:rr(.20,.54)*(0.88+g*.18),age:0,anchor,bright:rnd()<(.18+.12*g)},anchor,.92));}const maxF=simCap(Math.round(170+set.network*122+set.memory*42),80);if(filaments.length>maxF)filaments.splice(0,filaments.length-maxF);}
+function maybeEmitFilament(e,px,py,main,act){if(e.life<.20||set.network<.25)return;if(!anchors[e.anchor])return;if(clusterMotionWeight(e.anchor)<.12)return;const moved=dist(px,py,e.x,e.y);if(moved<.035)return;const A=anchors[e.anchor];const spider=e.type==='spider';const grav=anchorGravity(e.anchor);const gravBoost=.78+grav*.38;const rate=(main ? .052 : .016)*(0.68+set.network*.55)*(0.72+set.memory*.20)*(0.55+act)*(spider?1.35+set.spider*.55:1)*gravBoost;if(rnd()>simChance(rate))return;const dx=e.x-px,dy=e.y-py,ln=Math.hypot(dx,dy)+.01;const ax=A.x,ay=A.y,adx=e.x-ax,ady=e.y-ay,ad=Math.hypot(adx,ady)+.01;const base=Math.min(W,H);const rootR=clamp(e.r*(.18+.25*rnd())+base*(.0028+.0062*grav),3.0,18+11*grav);const rootSide=rr(-1,1)*clamp(e.r*.32+base*.0042,2.2,14);const x0=clamp(ax+adx/ad*rootR-ady/ad*rootSide,W*.04,W*.96);const y0=clamp(ay+ady/ad*rootR+adx/ad*rootSide,H*.05,H*.95);const x1=e.x-dx/ln*(rr(0,3)+e.r*(spider?.10:.07)),y1=e.y-dy/ln*(rr(0,3)+e.r*(spider?.10:.07));const bend=rr(-18,18)*(main?1:.68)*(0.78+grav*.34);let mx=(x0+x1)/2-dy/ln*bend+rr(-3,3),my=(y0+y1)/2+dx/ln*bend+rr(-3,3);const fc=fieldControlPoint(x0,y0,x1,y1,mx,my,e.anchor,(main?1:.74)*(0.70+grav*.42));mx=fc.x;my=fc.y;const col=blend(saturate(e.color,1.10),[238,242,255],main ? .32 : .17);filaments.push(bindFilamentRoot({x0,y0,cx:mx,cy:my,x1,y1,color:col,life:clamp((.84+rnd(.22))*(.88+grav*.11),.58,1.12),decay:rr(.0035,.0080)/(0.82+set.memory*.28+grav*.05),w:rr(.22,.66)*(main?1.20:.78)*(0.88+grav*.15),age:0,anchor:e.anchor,bright:(main&&rnd()<.56+grav*.06)||(spider&&rnd()<.42+grav*.05)},e.anchor,.92));const maxF=simCap(Math.round(170+set.network*122+set.memory*42),80);if(filaments.length>maxF)filaments.splice(0,filaments.length-maxF);} 
+function tickFilaments(){const dt=tempoDt();if(dt<=0)return;for(let i=filaments.length-1;i>=0;i--){const f=filaments[i];f.age+=dt;f.life-=f.decay*dt;if(f.life<=0){filaments.splice(i,1);continue;}const sd=slowDt();f.cx+=Math.sin((T+f.age)*.004+f.anchor)*.010*sd;f.cy+=Math.cos((T+f.age)*.0037+f.anchor)*.010*sd;}}
+function filamentFadeGradient(c,x0,y0,x1,y1,color,alpha){const grad=c.createLinearGradient(x0,y0,x1,y1);grad.addColorStop(0,rgba(color,0));grad.addColorStop(.10,rgba(color,alpha*.16));grad.addColorStop(.36,rgba(color,alpha*.92));grad.addColorStop(.58,rgba(color,alpha));grad.addColorStop(.88,rgba(color,alpha*.15));grad.addColorStop(1,rgba(color,0));return grad;}
+function drawFilaments(c){c.save();c.lineCap='round';c.lineJoin='round';for(const f of filaments){const a=clamp(f.life,0,1);if(a<.025)continue;const g=filamentGeom(f);const al=a*.345*set.network;c.beginPath();c.moveTo(g.x0,g.y0);c.quadraticCurveTo(g.cx,g.cy,g.x1,g.y1);c.strokeStyle=filamentFadeGradient(c,g.x0,g.y0,g.x1,g.y1,f.color,al);c.lineWidth=f.w*(.64+a*1.02);c.stroke();if(f.bright){const bx0=mix(g.x0,g.cx,.18),by0=mix(g.y0,g.cy,.18),bx1=mix(g.x1,g.cx,.18),by1=mix(g.y1,g.cy,.18);const bc=glow(f.color,.78);c.beginPath();c.moveTo(bx0,by0);c.quadraticCurveTo(g.cx,g.cy,bx1,by1);c.strokeStyle=filamentFadeGradient(c,bx0,by0,bx1,by1,bc,a*.132);c.lineWidth=Math.max(.22,f.w*.46);c.stroke();}}c.restore();}
+
+const anchors=[],anchorLinks=[],entities=[],runs=[],filaments=[],edgeSpiders=[];const latent=new Map(),motifToAnchor=new Map();const edgeSpiderStimuli=[],edgeSpiderSites=[];const EDGE_SPIDER_MAX=2;let lastEdgeSpiderT=-9999,lastSpiderStateT=-9999,lastAnchorT=-9999,lastSwitchT=-9999,lastRunT=-9999;
+function edgeSpiderActiveCount(){let n=0;for(const s of edgeSpiders){if(s&&!s.exiting&&(s.life||0)>(s.fadeOut||66)*.48)n++;}return n;}
+let movingSlots=[],nextMotionSlotT=0;
+function motionSlotCap(){const n=activeCount();if(n<=1)return n;const raw=n<=3?Math.min(2,n):Math.min(n,(n>=6&&rnd()<.34)?3:2);const scaled=raw*SIMULTANEITY;const lo=Math.floor(scaled),hi=Math.ceil(scaled);return clamp(rnd()<scaled-lo?hi:lo,1,n);} 
+function clusterMotionWeight(i){const a=anchors[i];if(!a||i>=activeCount())return 0;const inSlot=movingSlots.indexOf(i)>=0;const base=inSlot?1:0;const soft=base+clamp((a.birthBoost||0)*.18+anchorPulse(i)*.10,0,.18);return clamp((a.motionLevel||0)*.85+soft*.15,0,1.18);} 
+function updateMovingClusters(){const n=activeCount();if(n<1){movingSlots=[];return;}let valid=movingSlots.filter(i=>i>=0&&i<n);const expired=T>=nextMotionSlotT||!valid.length;if(expired){const cap=motionSlotCap();const chosen=[];function add(i){if(i>=0&&i<n&&chosen.indexOf(i)<0&&chosen.length<cap)chosen.push(i);}if(focus.current!=null)add(focus.current);let candidates=[];for(let i=0;i<n;i++){if(chosen.indexOf(i)>=0)continue;const a=anchors[i];if(!a)continue;const dormant=clamp((T-(a.lastMotionT||a.bornT||0))/4800,0,1);const related=focus.current!=null&&linkFor(focus.current,i)?(linkFor(focus.current,i).str||.08):0;const newborn=clamp(1-(T-(a.bornT||0))/2200,0,1);const rel=focus.current!=null?relationBetweenMotifs(i,anchors[focus.current]&&anchors[focus.current].motif):0;const s=anchorGravity(i)*.26+(a.mobility||.55)*.32+dormant*.42+newborn*.34+related*.46+rel*.32+rnd(.26);candidates.push({i,s});}candidates.sort((a,b)=>b.s-a.s);for(const c of candidates)add(c.i);movingSlots=chosen;for(const i of movingSlots){if(anchors[i])anchors[i].lastMotionT=T;}nextMotionSlotT=T+Math.round(rr(520,1120)/Math.max(.58,set.tempo));}for(let i=0;i<n;i++){const a=anchors[i];if(!a)continue;const target=movingSlots.indexOf(i)>=0?1:0;a.motionLevel+=(target-a.motionLevel)*(target?.045:.145)*slowDt();}}
+function promoteMovingCluster(i){const n=activeCount();if(i==null||i<0||i>=n)return;const cap=Math.max(1,motionSlotCap());movingSlots=[i].concat(movingSlots.filter(x=>x!==i&&x>=0&&x<n)).slice(0,cap);if(anchors[i]){anchors[i].motionLevel=Math.max(anchors[i].motionLevel||0,.82);anchors[i].lastMotionT=T;}nextMotionSlotT=Math.max(nextMotionSlotT,T+Math.round(420/Math.max(.58,set.tempo)));}
+function bindFilamentRoot(f,anchor,strength){const a=anchors[anchor];if(!a)return f;f.rootAnchor=anchor;f.rootLock=clamp(strength==null?.84:strength,.35,1);f.rootLocalX=f.x0-a.x;f.rootLocalY=f.y0-a.y;return f;}
+function filamentGeom(f){let x0=f.x0,y0=f.y0,cx=f.cx,cy=f.cy,x1=f.x1,y1=f.y1;const a=anchors[f.rootAnchor];if(a&&f.rootLocalX!=null){const tx=a.x+f.rootLocalX,ty=a.y+f.rootLocalY,lock=clamp(f.rootLock==null?.80:f.rootLock,0,1);const dx=tx-f.x0,dy=ty-f.y0;x0=mix(f.x0,tx,lock);y0=mix(f.y0,ty,lock);cx+=dx*.42*lock;cy+=dy*.42*lock;}return {x0,y0,cx,cy,x1,y1};}
+const focus={current:0,previous:0,since:0,duration:980};
+let turnIndex=0,nextTurnT=80,lastImpulseT=-9999,lastSustainImpulseT=-9999,lastContinuityImpulseT=-9999,chatPulse=null;
+function globalPulse(){return chatPulse?clamp(chatPulse.level,0,1):0;}
+function anchorPulse(i){const a=anchors[i];return a?clamp(a.pulse||0,0,1):0;}
+function pulseWhite(i){const a=anchors[i];return a?clamp((a.whitePulse||0)*set.white,0,1.15):0;}
+function activeCount(){return Math.min(anchors.length,set.maxCenters|0);}function anchorWeight(i){return i<activeCount()?(anchors[i].activity||0):0;}function nearestAnchor(x,y,limit){let bi=0,bd=1e9,n=limit==null?activeCount():limit;for(let i=0;i<n;i++){const a=anchors[i];const dd=dist(x,y,a.x,a.y);if(dd<bd){bd=dd;bi=i;}}return bi;}
+function darkShare(anchor){let total=0,dark=0;for(const e of entities){if(e.deadFlag||e.life<=0)continue;if(anchor==null||e.anchor===anchor){total++;if(e.darkTone)dark++;}}return total?dark/total:0;}
+function mayUseDark(anchor){const local=darkShare(anchor),global=darkShare(null);if(local>.145||global>.112)return false;return rnd()<.105;}
+function qpos(A,C,B,t){const u=1-t;return {x:u*u*A.x+2*u*t*C.x+t*t*B.x,y:u*u*A.y+2*u*t*C.y+t*t*B.y};}
+function lpos(A,B,t){return {x:mix(A.x,B.x,t),y:mix(A.y,B.y,t)};}
+function runPos(A,C,B,t,curve){const q=qpos(A,C,B,t),l=lpos(A,B,t),k=clamp(curve==null?.54:curve,0,1);return {x:mix(l.x,q.x,k),y:mix(l.y,q.y,k)};}
+function linkFor(a,b){return anchorLinks.find(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a));}
+
+function relationBetweenMotifs(i,j){const r=analysis&&analysis.relations;if(!r||i==null||j==null||!r[i])return 0;return clamp(r[i][j]||0,0,1);}
+function strongestRelatedAnchor(motifIdx){let best=-1,br=-1;for(let k=0;k<activeCount();k++){const a=anchors[k];if(!a)continue;const rel=relationBetweenMotifs(motifIdx,a.motif);const cat=(analysis.motifs[motifIdx]&&analysis.motifs[motifIdx].cat)===a.cat?.035:0;const score=rel+cat+rnd(.018);if(score>br){br=score;best=k;}}return {idx:best,rel:br};}
+function boundedPoint(x,y,margin){const b=visibleBounds(margin||.075);return {x:clamp(x,b.left,b.right),y:clamp(y,b.top,b.bottom)};}
+function avoidAnchorCrowd(p,parentIdx,rel){let x=p.x,y=p.y;const base=Math.min(W,H);for(let pass=0;pass<4;pass++){for(let i=0;i<activeCount();i++){const a=anchors[i];if(!a)continue;const dx=x-a.x,dy=y-a.y,d=Math.hypot(dx,dy)+.01;const allowNear=i===parentIdx&&rel>.46;const minD=base*(allowNear?.045:.070)*centerSpread();if(d<minD){const push=(minD-d)*(.58+pass*.14);x+=dx/d*push;y+=dy/d*push;}}const b=boundedPoint(x,y,.065);x=b.x;y=b.y;}return {x,y};}
+function fallbackBirthPoint(i,word){const h=hash((word||'motiv')+'|fallback|'+layoutSalt+'|'+i),base=Math.min(W,H);let best=null,bs=-1;for(let k=0;k<10;k++){const u=((h>>>(k%18))%997)/997;const a=layoutRunRotation()+i*1.73+k*2.11+u*1.9+(h%1000)*.0009;const rad=base*(.20+.34*((h>>((k+3)%17))%997)/997)*centerSpread();let p=boundedPoint(W*.50+Math.cos(a)*rad,H*.50+Math.sin(a)*rad,.060);let md=1e9;for(let j=0;j<activeCount();j++){const A=anchors[j];md=Math.min(md,dist(p.x,p.y,A.x,A.y));}const ideal=base*(.19+.20*u)*centerSpread();const edge=Math.min(p.x,W-p.x,p.y,H-p.y)/base;const jitterScore=((hash((word||'motiv')+'|fallback-score|'+i+'|'+k+'|'+variationSalt)%1000)/1000-.5)*.12;const score=-Math.abs(md-ideal)/base+edge*.45+jitterScore;if(score>bs){bs=score;best=p;}}return withLayoutJitter(best||sparsePoint(i,analysis.motifs.length,word),i,word,.026);}
+function birthPointForMotif(m,i){if(i===0||activeCount()<1){const p=sparsePoint(0,analysis.motifs.length,m.word);return {x:p.x,y:p.y,parent:-1,rel:0,mode:'origin'};}const best=strongestRelatedAnchor(i);const base=Math.min(W,H);if(best.idx>=0&&best.rel>.24){const parent=anchors[best.idx],h=hash((m.word||i)+'|near|'+(parent.word||best.idx)+'|'+layoutSalt);const u=(h%10000)/10000;const close=best.rel>.52;const rad=base*(close?(.060+.080*u):(.135+.155*u))*centerSpread();const parentNearCenter=dist(parent.x,parent.y,W*.5,H*.5)<base*.095;const outA=parentBirthBaseAngle(parent,m,i);const side=(h&1)?1:-1;const turn=(close?.70:1.05)+((h>>>9)%1000)/1000*(close?.55:.82);const angleNoise=(((h>>>18)%1000)/1000-.5)*(close?.62:.95);const a=parentNearCenter?(outA+angleNoise*.65):(outA+side*turn+angleNoise);const sx=1.02,sy=1.02;let p=boundedPoint(parent.x+Math.cos(a)*rad*sx,parent.y+Math.sin(a)*rad*sy,.060);p=avoidAnchorCrowd(p,best.idx,best.rel);p=withLayoutJitter(p,i,m.word,close?.014:.022);return {x:p.x,y:p.y,parent:best.idx,rel:best.rel,mode:close?'near':'branch'};}let p=fallbackBirthPoint(i,m.word);p=avoidAnchorCrowd(p,-1,0);p=withLayoutJitter(p,i,m.word,.024);return {x:p.x,y:p.y,parent:-1,rel:0,mode:'remote'};}
+function linkControlTarget(l){const A=anchors[l.a],B=anchors[l.b];if(!A||!B)return keepLinkControlInFrame(l.cpx,l.cpy,20);const dx=B.x-A.x,dy=B.y-A.y,ln=Math.hypot(dx,dy)+1;const bend=l.bend==null?((l.reason==='semantic'?70:46)*((hash(A.word+B.word)%2)?1:-1)):l.bend;return keepLinkControlInFrame((A.x+B.x)/2-dy/ln*bend,(A.y+B.y)/2+dx/ln*bend,20);}
+function updateAnchorLink(l){const t=linkControlTarget(l);l.cpx+=(t.x-l.cpx)*.014+Math.sin(T*.00023+l.phase)*.010;l.cpy+=(t.y-l.cpy)*.014+Math.cos(T*.00021+l.phase)*.010;const p=keepLinkControlInFrame(l.cpx,l.cpy,20);l.cpx=p.x;l.cpy=p.y;}
+function tickAnchorPositions(){
+  const n=activeCount();
+  if(n<2)return;
+  const base=Math.min(W,H),dt=Math.max(.58,set.tempo)*slowDt(),AL=attractionLevel();
+  if(AL<=.04){
+    for(let i=0;i<n;i++){const a=anchors[i];a.vx=(a.vx||0)*.86;a.vy=(a.vy||0)*.86;a.strainX=(a.strainX||0)*.92;a.strainY=(a.strainY||0)*.92;}
+    return;
+  }
+  const F=anchors[focus.current];
+  for(let i=0;i<n;i++){
+    const a=anchors[i];
+    if(!a)continue;
+    let fx=0,fy=0,linkCount=0;
+    const gi=anchorGravity(i),mob=clamp(a.mobility||.58,.18,1.28);
+    const mGate=clusterMotionWeight(i);
+    if(mGate<.065){a.vx=(a.vx||0)*.80;a.vy=(a.vy||0)*.80;a.strainX=(a.strainX||0)*.82;a.strainY=(a.strainY||0)*.82;continue;}
+
+    // Schwacher Bezug zum Geburtsort: Hafthintergrund, kein Fixpunkt.
+    const hx=(a.homeX==null?a.x:a.homeX)-a.x,hy=(a.homeY==null?a.y:a.homeY)-a.y;
+    const homeD=Math.hypot(hx,hy);
+    if(homeD>base*.048){
+      const homePull=(homeD-base*.048)*.000012*(a.placement==='origin'?1.02:.52)*(1.06-mob*.20);
+      fx+=hx/(homeD+.01)*homePull;
+      fy+=hy/(homeD+.01)*homePull;
+    }
+
+    // Thematische Topologie: verwandte/verknuepfte Zentren duerfen sichtbar nachgeben.
+    for(let j=0;j<n;j++){
+      if(i===j)continue;
+      const b=anchors[j];
+      if(!b)continue;
+      let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)+.01;
+      const rel=relationBetweenMotifs(a.motif,b.motif);
+      const l=linkFor(i,j);
+      const linkStr=l?clamp((l.str||0)*3.2,0,.92):0;
+      if(l)linkCount++;
+      const gj=anchorGravity(j),gAvg=(gi+gj)*.5;
+      const activePair=(i===focus.current||j===focus.current);
+
+      if(rel>.075||linkStr>.020){
+        let target=base*(.078+(1-rel)*.185)*centerSpread()*(1-.30*linkStr);
+        if(activePair)target*=.86;
+        const stretch=d-target;
+        const dead=base*(.0055+(1-rel)*.0075)/(0.78+AL*.55);
+        if(Math.abs(stretch)>dead){
+          const free=Math.abs(stretch)-dead;
+          const sign=stretch>0?1:-1;
+          const mag=clamp(free*(.00042+.00024*AL)*( .18+rel*1.28+linkStr*1.05)*(0.74+gAvg*.32)*mob*AL,0,.34*AL);
+          fx+=dx/d*mag*sign;
+          fy+=dy/d*mag*sign;
+        }
+      }
+
+      // Mindestabstand verhindert, dass die Cluster kollabieren.
+      const minD=base*(.050+.012*(a.mass+b.mass))*centerSpread();
+      if(d<minD){
+        const rep=clamp((minD-d)*(.00046+.00016*AL)*(0.86+mob*.26),0,.30*AL);
+        fx-=dx/d*rep;
+        fy-=dy/d*rep;
+      }
+    }
+
+    // Der aktive Ort zieht thematisch verwandte Zentren staerker an, aber nicht alle.
+    if(F&&i!==focus.current){
+      let dx=F.x-a.x,dy=F.y-a.y,d=Math.hypot(dx,dy)+.01;
+      const rel=relationBetweenMotifs(a.motif,F.motif),l=linkFor(i,focus.current),linkStr=l?clamp((l.str||0)*2.4,0,.78):0;
+      if(rel>.10||linkStr>.035){
+        const target=base*(.105+(1-rel)*.130)*centerSpread()*(1-.22*linkStr);
+        const stretch=d-target;
+        const dead=base*.0065/(.75+AL*.55);
+        if(Math.abs(stretch)>dead){
+          const free=Math.abs(stretch)-dead,sign=stretch>0?1:-1;
+          const mag=clamp(free*(.00026+.00018*AL)*(rel*.92+linkStr*.85+.12)*(0.70+anchorGravity(focus.current)*.25)*mob*AL*(.58+F.activity*.72),0,.22*AL);
+          fx+=dx/d*mag*sign;
+          fy+=dy/d*mag*sign;
+        }
+      }
+    }
+
+    // Auch der Hauptfokus kann leicht nachgeben: er wird von seinen wichtigsten Nachbarn versetzt.
+    if(i===focus.current){
+      let sx=0,sy=0,sw=0;
+      for(let j=0;j<n;j++){
+        if(i===j)continue;
+        const b=anchors[j],rel=relationBetweenMotifs(a.motif,b.motif),l=linkFor(i,j),ls=l?clamp((l.str||0)*2.5,0,.8):0;
+        const w=rel*.75+ls*.68+anchorPulse(j)*.25+(b.birthBoost||0)*.18;
+        if(w>.08){sx+=b.x*w;sy+=b.y*w;sw+=w;}
+      }
+      if(sw>0){
+        const tx=sx/sw,ty=sy/sw,dx=tx-a.x,dy=ty-a.y,d=Math.hypot(dx,dy)+.01;
+        const cap=base*.090;
+        const pull=clamp(Math.min(d,cap)*(.00024+.00018*AL)*AL*(.54+a.activity*.38)*mob,0,.20*AL);
+        fx+=dx/d*pull;
+        fy+=dy/d*pull;
+      }
+    }
+
+    // Sehr langsamer Feldzug: verhindert tote Gleichgewichte, ohne Planetenbahn zu erzeugen.
+    const fieldWeight=clamp(.18+a.activity*.55+linkCount*.10+gi*.12,0,1.2);
+    const wave=Math.sin(T*.00105+(a.fieldPhase||0)*6.283+gi*1.7);
+    fx+=Math.cos((a.fieldPhase||0)*6.283+T*.00042+i*.71)*base*.000020*AL*mob*fieldWeight*wave;
+    fy+=Math.sin((a.fieldPhase||0)*6.283+T*.00039+i*.57)*base*.000017*AL*mob*fieldWeight*Math.cos(T*.00091+i);
+
+    // Weiche Bildgrenzen: zoombewusst, damit Zentren sichtbar in der Bildebene bleiben.
+    const vbSoft=visibleBounds(.045);
+    if(a.x<vbSoft.left)fx+=(vbSoft.left-a.x)*(.00020+.00008*AL);
+    if(a.x>vbSoft.right)fx-=(a.x-vbSoft.right)*(.00020+.00008*AL);
+    if(a.y<vbSoft.top)fy+=(vbSoft.top-a.y)*(.00018+.00006*AL);
+    if(a.y>vbSoft.bottom)fy-=(a.y-vbSoft.bottom)*(.00018+.00006*AL);
+
+    // Haftreibung: Spannung sammelt sich und loest sich dann in sichtbarem Nachgeben.
+    fx*=mGate; fy*=mGate;
+    a.strainX=clamp((a.strainX||0)*.952+fx*dt,-4.2,4.2);
+    a.strainY=clamp((a.strainY||0)*.952+fy*dt,-4.2,4.2);
+    const S=Math.hypot(a.strainX,a.strainY);
+    const stick=(.0044+(a.activity<.055?.0022:0))*(1.10-clamp(gi,.35,1.9)*.18)/(0.76+mob*.40)/(0.45+AL*.58);
+    let ax=0,ay=0;
+    if(S>stick){
+      const release=(S-stick)/S;
+      ax=a.strainX*release*(.032+.025*AL);
+      ay=a.strainY*release*(.032+.025*AL);
+      a.strainX*=.84;
+      a.strainY*=.84;
+    }else{
+      a.vx=(a.vx||0)*.88;
+      a.vy=(a.vy||0)*.88;
+    }
+    a.vx=(a.vx||0)+ax*dt;
+    a.vy=(a.vy||0)+ay*dt;
+    const fr=Math.pow(.956-.010*clamp(a.activity,0,.9),dt);
+    a.vx*=fr;
+    a.vy*=fr;
+    const lim=(.030+(.24+.30*mob+.10*clamp(a.activity+anchorPulse(i)*.45,0,1.2))*AL);
+    const ox=a.x,oy=a.y;
+    const vbHard=visibleBounds(.035);
+    a.x=clamp(a.x+clamp(a.vx,-lim,lim)*dt,vbHard.left,vbHard.right);
+    a.y=clamp(a.y+clamp(a.vy,-lim,lim)*dt,vbHard.top,vbHard.bottom);
+
+    const movedFromTrace=dist(a.x,a.y,a.lastTraceX==null?ox:a.lastTraceX,a.lastTraceY==null?oy:a.lastTraceY);
+    if(movedFromTrace>base*.0055){
+      if(rnd()<(.32+.18*AL)*set.network)seedFieldFilaments(i,1,.34+.28*gi);
+      if(T-(a.lastDriftTraceT||-9999)>420 && movedFromTrace>base*.010){
+        const rel=relShape(9+a.mass*8,a.profile,T*.003+a.profile.phase,.72);
+        mem.add(a.x,a.y,10+a.mass*7,a.color,'center',rel,true);
+        a.lastDriftTraceT=T;
+      }
+      a.lastTraceX=a.x;
+      a.lastTraceY=a.y;
+    }
+  }
+}
+
+function visibleAnchorDrift(){
+  const n=activeCount();
+  if(n<2)return;
+  const base=Math.min(W,H),dt=Math.max(.58,set.tempo)*slowDt(),AL=attractionLevel();
+  if(AL<=.05){
+    for(let i=0;i<n;i++){const a=anchors[i];if(a){a.driftVX=(a.driftVX||0)*.86;a.driftVY=(a.driftVY||0)*.86;}}
+    return;
+  }
+  const power=clamp(AL/18,0,1.85);
+  for(let i=0;i<n;i++){
+    const a=anchors[i];
+    if(!a)continue;
+    let fx=0,fy=0,used=0;
+    const gi=anchorGravity(i),mob=clamp(a.mobility||.58,.18,1.30);
+    const ageEase=clamp((T-(a.bornT||0))/1800,.12,1);
+    const mGate=clusterMotionWeight(i);
+    if(mGate<.065){a.driftVX=(a.driftVX||0)*.78;a.driftVY=(a.driftVY||0)*.78;a.holdX=(a.holdX||0)*.82;a.holdY=(a.holdY||0)*.82;continue;}
+    const localPower=power*(.10+.90*ageEase)*mGate;
+
+    for(let j=0;j<n;j++){
+      if(i===j)continue;
+      const b=anchors[j];
+      if(!b)continue;
+      const rel=relationBetweenMotifs(a.motif,b.motif);
+      const l=linkFor(i,j);
+      const linkStr=l?clamp((l.str||0)*3.0,0,.90):0;
+      const connected=!!l;
+      if(rel<.055 && linkStr<.018 && !connected)continue;
+      let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)+.01;
+      const gAvg=(gi+anchorGravity(j))*.5;
+      const active=(i===focus.current||j===focus.current)?1:0;
+      const relationStrength=clamp(rel*.95+linkStr*.70+(connected?.08:0)+active*.045,0,1.25);
+      const desired=base*(.080+(1-rel)*.205)*centerSpread()*(1-.22*linkStr);
+      const band=base*(.010+(1-rel)*.006)/(0.88+power*.52);
+      const stretch=d-desired;
+      if(Math.abs(stretch)>band){
+        const sign=stretch>0?1:-1;
+        const free=clamp((Math.abs(stretch)-band)/base,0,.48);
+        const mag=free*(.26+relationStrength*1.18)*(0.72+gAvg*.28)*(0.68+mob*.42);
+        fx+=dx/d*mag*sign;
+        fy+=dy/d*mag*sign;
+        used+=relationStrength;
+      }
+    }
+
+    // Hauptaktivitaet und Geburtsimpuls verschieben ein Zentrum etwas staerker,
+    // ohne daraus eine umlaufende Planetenbewegung zu machen.
+    const pulse=anchorPulse(i)+(a.birthBoost||0)*.55+a.activity*.42;
+    if(pulse>.05){
+      const ph=(a.fieldPhase||0)*Math.PI*2;
+      fx+=Math.cos(ph+T*.0016+i*.77)*.018*pulse*(0.65+gi*.25);
+      fy+=Math.sin(ph+T*.0013+i*.51)*.016*pulse*(0.65+gi*.25);
+      used+=pulse*.32;
+    }
+
+    // Hafthintergrund: nahe am Geburtsort passiert wenig; bei groesserer Entfernung zieht
+    // der alte Ort nur als Bremse, nicht als harter Fixpunkt.
+    const hx=(a.homeX==null?a.x:a.homeX)-a.x,hy=(a.homeY==null?a.y:a.homeY)-a.y;
+    const hd=Math.hypot(hx,hy)+.01;
+    const maxDrift=base*(.070+.075*mob+.035*gi+.018*power)*centerSpread();
+    if(hd>maxDrift){
+      const pull=clamp((hd-maxDrift)/base,0,.35)*(.30+.18*(1-mob));
+      fx+=hx/hd*pull;
+      fy+=hy/hd*pull;
+      used+=pull;
+    }
+
+    // Weiche Randhaftung: zoombewusst, damit die sichtbaren Cluster im Bild bleiben.
+    const vbSoft2=visibleBounds(.045);
+    if(a.x<vbSoft2.left)fx+=(vbSoft2.left-a.x)/base*.42;
+    if(a.x>vbSoft2.right)fx-=(a.x-vbSoft2.right)/base*.42;
+    if(a.y<vbSoft2.top)fy+=(vbSoft2.top-a.y)/base*.38;
+    if(a.y>vbSoft2.bottom)fy-=(a.y-vbSoft2.bottom)/base*.38;
+
+    // Haftreibung: erst Spannung sammeln, dann sichtbares Nachgeben.
+    a.holdX=(a.holdX||0)*.82+fx*localPower;
+    a.holdY=(a.holdY||0)*.82+fy*localPower;
+    const S=Math.hypot(a.holdX,a.holdY);
+    const stick=(.010+(a.activity<.05?.004:0))/(0.72+localPower*.92)/(0.82+mob*.34)/(0.86+gi*.12);
+    let ax=0,ay=0;
+    if(S>stick){
+      const release=(S-stick)/S;
+      const impulse=clamp((S-stick)*(.095+.105*localPower)*(0.82+mob*.28),0,.16+.28*localPower);
+      ax=a.holdX/S*impulse*release;
+      ay=a.holdY/S*impulse*release;
+      a.holdX*=.74;
+      a.holdY*=.74;
+    }
+    const damp=Math.pow(.944-.018*clamp(used,0,1),dt);
+    a.driftVX=((a.driftVX||0)+ax)*damp;
+    a.driftVY=((a.driftVY||0)+ay)*damp;
+
+    const maxStep=(.070+.52*localPower)*(.72+mob*.32)*(.50+.50*ageEase);
+    const ox=a.x,oy=a.y;
+    const vbHard2=visibleBounds(.035);
+    a.x=clamp(a.x+clamp(a.driftVX,-maxStep,maxStep)*dt,vbHard2.left,vbHard2.right);
+    a.y=clamp(a.y+clamp(a.driftVY,-maxStep,maxStep)*dt,vbHard2.top,vbHard2.bottom);
+    // Drift bleibt sichtbar, aber an den Geburtsort elastisch gebunden.
+    // Dadurch rueckt manches zusammen, ohne dass Zentren aus dem Feld herauslaufen.
+    const hx2=a.homeX==null?a.x:a.homeX,hy2=a.homeY==null?a.y:a.homeY;
+    const dxh=a.x-hx2,dyh=a.y-hy2,hd2=Math.hypot(dxh,dyh)+.01;
+    const capD=base*(.034+(.032+.042*mob+.020*gi)*ageEase+(.048+.046*mob+.026*gi)*ageEase*clamp(power,0,1.6))*centerSpread();
+    if(hd2>capD){
+      a.x=hx2+dxh/hd2*capD;
+      a.y=hy2+dyh/hd2*capD;
+      a.driftVX*=.42;
+      a.driftVY*=.42;
+      a.holdX*=.64;
+      a.holdY*=.64;
+    }
+    const vbAfterCap=visibleBounds(.035);
+    a.x=clamp(a.x,vbAfterCap.left,vbAfterCap.right);
+    a.y=clamp(a.y,vbAfterCap.top,vbAfterCap.bottom);
+
+    const moved=dist(a.x,a.y,ox,oy),fromBirth=dist(a.x,a.y,a.homeX==null?a.x:a.homeX,a.homeY==null?a.y:a.homeY);
+    if(moved>base*.00045 && T-(a.lastMoveFilamentT||-9999)>95){
+      if(rnd()<(.18+.22*power)*set.network)seedFieldFilaments(i,1,.42+.30*gi);
+      a.lastMoveFilamentT=T;
+    }
+    if(fromBirth>base*.010 && T-(a.lastDriftTraceT||-9999)>360){
+      const rel=relShape(8+a.mass*7,a.profile,T*.003+a.profile.phase,.66);
+      mem.add(a.x,a.y,9+a.mass*6,a.color,'center',rel,true);
+      a.lastDriftTraceT=T;
+    }
+  }
+}
+
+function connectAnchors(a,b,reason){if(a===b||linkFor(a,b))return null;const A=anchors[a],B=anchors[b];if(!A||!B)return null;const dx=B.x-A.x,dy=B.y-A.y,ln=Math.hypot(dx,dy)+1;const rel=relationBetweenMotifs(A.motif,B.motif);const bend=(reason==='semantic'?74:48)*((hash(A.word+B.word+'|'+layoutSalt)%2)?1:-1)*(0.42+rnd(.72))*(1+.22*rel);const cp=keepLinkControlInFrame((A.x+B.x)/2-dy/ln*bend,(A.y+B.y)/2+dx/ln*bend,20);const l={a,b,reason,str:0,maxStr:(reason==='semantic' ? .16 : .12)+rnd(.18)+rel*.08,bend,cpx:cp.x,cpy:cp.y,phase:rnd(Math.PI*2),freshT:T,lastD:null,lastStimT:-9999,lastApproachStimT:-9999,lastContrastStimT:-9999,closing:0,contrast:0};anchorLinks.push(l);if(T>10&&reason!=='stimulus')requestEdgeSpider('fresh',a,b,.86+.28*rel);return l;}
+function connectNewAnchor(idx){if(idx<=0)return;const A=anchors[idx];let parent=A.parent!=null?A.parent:-1;let best=-1,br=-1;for(let i=0;i<idx;i++){const r=relationBetweenMotifs(A.motif,anchors[i].motif);if(r>br){br=r;best=i;}}if(parent<0&&best>=0&&br>.18)parent=best;if(parent<0){let near=0,bd=1e9;for(let i=0;i<idx;i++){const d=dist(A.x,A.y,anchors[i].x,anchors[i].y);if(d<bd){bd=d;near=i;}}parent=near;}connectAnchors(idx,parent,br>.22?'semantic':'proximity');if(best>=0&&best!==parent&&br>.38)connectAnchors(idx,best,'semantic');for(let i=0;i<idx;i++){if(i!==parent&&anchors[i].cat===A.cat&&relationBetweenMotifs(A.motif,anchors[i].motif)>.24&&rnd()<.46){connectAnchors(idx,i,'semantic');break;}}}
+function focusPoint(){const p=clamp((T-focus.since)/focus.duration,0,1),e=ease(p);const A=anchors[focus.previous]||anchors[focus.current]||anchors[0],B=anchors[focus.current]||A;if(!A||!B)return {x:W*.5,y:H*.5};const dx=B.x-A.x,dy=B.y-A.y,ln=Math.hypot(dx,dy)+1;const wav=Math.sin(p*Math.PI)*18;return {x:mix(A.x,B.x,e)-dy/ln*wav,y:mix(A.y,B.y,e)+dx/ln*wav};}
+function maxActiveFrames(){return Math.round((1500+880*(1.45-clamp(set.switchRate,.24,1.64)/1.64))/Math.max(.58,set.tempo));}
+function focusFatigue(i){const a=anchors[i];if(!a)return 0;const since=a.activeSince==null?focus.since:a.activeSince;return clamp((T-since-maxActiveFrames())/(maxActiveFrames()*.72),0,1);}
+function restFrames(){return Math.round(rr(900,1850)/Math.max(.58,set.tempo));}
+
+function createAnchorFromMotif(m,i,birth){const p=profile(m.type,m.word);const bp=birthPointForMotif(m,i);m.x=bp.x;m.y=bp.y;const a={x:bp.x,y:bp.y,homeX:bp.x,homeY:bp.y,vx:0,vy:0,parent:bp.parent,relationToParent:bp.rel,placement:bp.mode,color:temperedWhite(m.color),profile:p,age:0,mass:0.18+clamp(m.score/8,0,.75),activity:.02,targetActivity:.02,pulse:0,whitePulse:0,word:m.word,cat:m.cat,type:m.type,birth:birth,locked:true,lastActive:-9999,bornT:T,activeSince:T,restUntil:0,birthBoost:0,score:m.score,freq:m.freq,motif:i,gravity:anchorGravityFromMotif(m,i),mobility:anchorMobilityFromMotif(m,i),strainX:0,strainY:0,lastTraceX:bp.x,lastTraceY:bp.y,fieldPhase:rnd(Math.PI*2)};anchors.push(a);const idx=anchors.length-1;const cscale=contentImpulseScale();motifToAnchor.set(i,idx);lastAnchorT=T;connectNewAnchor(idx);if(idx>0)requestEdgeSpider('birth',idx,a.parent!=null?a.parent:(focus.current>=0?focus.current:0),1.08);mem.addAnchorTrace(idx);seedFieldFilaments(idx,idx===0?1:1+Math.floor(anchorGravity(idx)*1.35),idx===0?.60:.86);promoteMovingCluster(idx);if(idx===0){focus.current=0;focus.previous=0;focus.since=0;a.activity=mix(.24,.82,cscale);a.pulse=mix(.18,.74,cscale);a.whitePulse=mix(.10,.52,cscale);a.lastActive=0;a.activeSince=0;}else{a.activity=mix(.05,.18,cscale);a.pulse=mix(.12,.72,cscale);a.whitePulse=mix(.06,.34,cscale);a.birthBoost=mix(.18,.95,cscale);a.lastActive=T;spawnImpulse(idx,a.type==='dense'?'spider':a.type,.62,.40,Math.round(2+set.density*3.2));if(focusFatigue(focus.current)>.10||T-focus.since>260||rnd()<.52*set.switchRate){switchTo(idx,'birth');}else{const prev=focus.current;if(prev!==idx)startAnchorRun(prev,idx,'birth');}}return idx;}
+function centerBirthGap(){const speed=Math.max(.25,set.birth||1),tempo=Math.max(.58,set.tempo);const lim=Math.min(set.maxCenters,analysis.motifs.length),early=anchors.length<Math.min(5,lim);if(early){return Math.round((150+140*(2.05-speed)/1.65)/tempo);}return Math.round((520+620*(2.05-speed)/1.65)/tempo);}
+function requestAnchorIndex(motifIdx,pressure){const lim=Math.min(set.maxCenters,analysis.motifs.length);if(lim<1)return 0;motifIdx=clamp(motifIdx|0,0,lim-1);if(motifToAnchor.has(motifIdx)){const mapped=motifToAnchor.get(motifIdx);if(mapped<activeCount())return mapped;}const p=latent.get(motifIdx)||{pressure:0,since:T,last:T};p.pressure=clamp(p.pressure+(pressure||0),0,3.2);p.last=T;latent.set(motifIdx,p);return anchors[focus.current]?focus.current:0;}
+function maybeCreateAnchor(){const turns=analysis.turns||[];if(allTurnsDoneAt>=0||(turns.length&&turnIndex>=turns.length))return;const lim=Math.min(set.maxCenters,analysis.motifs.length);if(anchors.length>=lim)return;if(T-lastAnchorT<centerBirthGap())return;const early=anchors.length<Math.min(5,lim);let best=-1,bestScore=-1;for(let i=0;i<lim;i++){if(motifToAnchor.has(i))continue;const m=analysis.motifs[i];if(!m||T<m.birth)continue;const p=latent.get(i);const pressure=p?p.pressure:0;const waiting=clamp((T-m.birth)/(early?900:3200),0,1.35);const score=pressure*(early?.55:.78)+waiting*(early?1.08:.76)+clamp((m.score||0)/(early?10:12),0,.62)-i*(early?.004:.014);if(score>bestScore){bestScore=score;best=i;}}const threshold=early?(.30-clamp(set.birth*.035,0,.09)):(.50-clamp(set.birth*.09,0,.22));if(best<0||bestScore<threshold)return;createAnchorFromMotif(analysis.motifs[best],best,T);latent.delete(best);}
+function tickAnchors(){maybeCreateAnchor();const n=activeCount();if(!n)return;for(let i=0;i<n;i++){const a=anchors[i];a.age+=slowDt();a.pulse=(a.pulse||0)*Math.pow(.966,tempoDt());a.whitePulse=(a.whitePulse||0)*Math.pow(.972,tempoDt());a.birthBoost=(a.birthBoost||0)*Math.pow(.985,tempoDt());}
+  const fpulse=anchorPulse(focus.current);const quiet=1-fpulse;const fatigue=focusFatigue(focus.current);const sustain=sustainPhase(),continuity=continuityPhase();let mainBase=clamp(.18+.20*set.focus+.55*fpulse+.10*(1-quiet*quiet)+.045*sustain+.035*continuity,.20,.94);mainBase*=1-fatigue*clamp(.62-.12*sustain-.10*continuity,.38,.62);
+  let sideBudget=(.026+set.side*.50)*(1-mainBase*.25)*(1+.18*sustain+.14*continuity);let sideRaw=0;
+  for(let i=0;i<n;i++){if(i===focus.current)continue;const a=anchors[i];const dormant=clamp((T-(a.lastActive||0))/6200,0,1);const ownPulse=anchorPulse(i);const rested=(!a.restUntil||T>a.restUntil)?1:.28;a.rawSide=(.10+a.mass*.30+dormant*.24+ownPulse*.70+(a.birthBoost||0)*.62)*rested*(a.birth<=T?1:0);sideRaw+=a.rawSide;}
+  for(let i=0;i<n;i++){const a=anchors[i];let target;if(i===focus.current){target=mainBase;}else{target=(a.rawSide||0)*sideBudget/(sideRaw+.0001)+anchorPulse(i)*.18+(a.birthBoost||0)*.10;target=clamp(target,.004,.14+set.side*.24);}a.activity+=(target-a.activity)*(.012+(i===focus.current ? .020 : .008))*slowDt();a.mass+=((i===focus.current ? .76-fatigue*.16 : a.mass)-a.mass)*.0009*slowDt();a.mass=clamp(a.mass,.10,1.24);if(a.activity>.30||anchorPulse(i)>.28)a.lastActive=T;}
+  if(chatPulse){chatPulse.level*=Math.pow(.958,tempoDt());if(chatPulse.level<.012)chatPulse=null;}
+  updateMovingClusters();
+  tickAnchorPositions();
+  visibleAnchorDrift();
+  for(const l of anchorLinks){if(l.str<l.maxStr)l.str+=.00054*set.network*slowDt();updateAnchorLink(l);}
+  maybeSwitchFocus();}function maybeSwitchFocus(){const n=activeCount();if(n<2)return;const forced=focusFatigue(focus.current)>.62;const cont=continuityPhase();const minGap=Math.max(420,1280/set.switchRate*(1-.22*cont));if(!forced&&T-lastSwitchT<minGap)return;if(!forced&&T-lastImpulseT<140)return;if(!forced&&rnd()>.0034*set.switchRate*tempoDt()*(1+.65*cont))return;let best=-1,bs=-1;for(let i=0;i<n;i++){if(i===focus.current)continue;const a=anchors[i];const dormant=clamp((T-(a.lastActive||0))/6200,0,1);const rel=(linkFor(focus.current,i)&&linkFor(focus.current,i).str)||0;const resting=(a.restUntil&&T<a.restUntil)?-.22:0;const newborn=clamp(1-(T-a.bornT)/2400,0,1);const s=a.mass*.32+dormant*.46+rel*.52+anchorPulse(i)*.42+(a.birthBoost||0)*.82+newborn*.24+resting+rnd(.18);if(s>bs){bs=s;best=i;}}if(best>=0&&(forced||bs>.28))switchTo(best,forced?'fatigue':'late');}function switchTo(idx,reason){if(idx===focus.current||!anchors[idx])return;const target=anchors[idx];const dormantFrames=T-(target.lastActive==null?-9999:target.lastActive);if(reason!=='birth'&&reason!=='limit'&&dormantFrames>920&&target.bornT!=null&&T-target.bornT>900)wakeDeposits(idx,reason==='turn'?.64:.48,reason);const old=anchors[focus.current];if(old){old.restUntil=T+restFrames();old.birthBoost=(old.birthBoost||0)*.35;}focus.previous=focus.current;focus.current=idx;focus.since=T;focus.duration=Math.round(rr(620,1120));target.lastActive=T;target.activeSince=T;target.restUntil=0;target.pulse=Math.max(target.pulse||0,reason==='birth'? .78:.50);target.whitePulse=Math.max(target.whitePulse||0,reason==='birth'? .36:.20);target.birthBoost=(target.birthBoost||0)*.42;lastSwitchT=T;promoteMovingCluster(idx);if(focus.previous!=null&&anchors[focus.previous]&&rnd()<simChance(.64))promoteMovingCluster(focus.previous);startAnchorRun(focus.previous,idx,reason);requestEdgeSpider(reason==='birth'?'birth':'switch',focus.previous,idx,reason==='birth'?1.18:.94);}
+function chooseSpawnAnchor(){const n=activeCount();if(n<1)return 0;let total=0,weights=[];for(let i=0;i<n;i++){const a=anchors[i];let w=Math.pow(clamp(a.activity+anchorPulse(i)*.55+(a.birthBoost||0)*.35,0,1.2),2.10);if(i===focus.current)w*=2.05*(1-.56*focusFatigue(i));else w*=.70;if(a.restUntil&&T<a.restUntil)w*=.28;w*=.28+.72*clusterMotionWeight(i);w+=.0016;weights.push(w);total+=w;}let r=rnd(total);for(let i=0;i<n;i++){r-=weights[i];if(r<=0)return i;}return focus.current;}
+function originFor(idx,spread=1){const a=anchors[idx]||anchors[0],fp=focusPoint();let bx=a.x,by=a.y;if(idx===focus.current){bx=mix(a.x,fp.x,.68);by=mix(a.y,fp.y,.68);}const act=anchorWeight(idx),grav=anchorGravity(idx);const base=Math.min(W,H);const gr=Math.max(0,grav-1)*.010;const x=bx+rr(-1,1)*base*(.032+.030*act+gr)*spread,y=by+rr(-1,1)*base*(.028+.026*act+gr*.86)*spread;const b=insetVisibleBounds(.030,10);return {x:clamp(x,b.left,b.right),y:clamp(y,b.top,b.bottom)};}
+function ensureAnchorIndex(idx,pressure){return requestAnchorIndex(idx,pressure||.24);}
+function impulseType(turn){if(!turn)return 'thought';if(turn.type==='dense'&&rnd()<.34)return 'spider';if(turn.cat==='form'&&rnd()<.25)return 'fusion';return turn.type||'thought';}
+function spawnImpulse(anchor,type,intensity,white,count){if(anchor<0||!anchors[anchor])return;const cscale=contentImpulseScale();const resting=anchors[anchor].restUntil&&T<anchors[anchor].restUntil&&anchor!==focus.current;const fatigue=anchor===focus.current?focusFatigue(anchor):0;if(resting&&rnd()>.28)return;const eff=clamp(intensity*(.35+.65*cscale)*(1-.48*fatigue)*(resting?.55:1),.08,1.12);const baseCount=(count==null?(1+eff*4.8*set.density*cscale):(count*(1-.46*fatigue)*(resting?.46:1)*cscale))*SIMULTANEITY;const n=Math.max(cscale<.22?0:1,Math.round(baseCount));const maxEntities=simCap(Math.round(8+(24+set.density*20-8)*cscale),5);for(let k=0;k<n&&entities.length<maxEntities;k++){let t=type;if(rnd()<.25*cscale)t=['cool','thought','warm','warm','dense','spider'][ri(6)];const o=originFor(anchor,.70+.45*rnd());const e=new Entity(o.x,o.y,t,anchor);e.life=clamp(e.life*(.86+.25*eff),.30,.86+.22*cscale);e.color=blend(e.color,[255,255,255],(e.darkTone?(.015+.055*white):(.06+.22*white))*set.white);e.vx+=rr(-.34,.34)*(.6+eff)*(.45+.55*cscale);e.vy+=rr(-.30,.30)*(.6+eff)*(.45+.55*cscale);e.memTimer=rr(24,84);entities.push(e);} }
+function triggerTurnImpulse(){const turns=analysis.turns||[];if(!turns.length||turnIndex>=turns.length||activeCount()<1)return;const turn=turns[turnIndex];const wanted=clamp(turn.anchor,0,Math.min(set.maxCenters,analysis.motifs.length)-1);let idx=ensureAnchorIndex(wanted,clamp(turn.intensity*.58+(turn.white||0)*.22,.18,1.05));if(idx<0)idx=0;if(idx!==focus.current&&anchors[idx]&&anchors[idx].restUntil&&T<anchors[idx].restUntil&&activeCount()>1&&rnd()<.70){const before=focus.current;maybeSwitchFocus();if(focus.current!==before)idx=focus.current;else idx=chooseSpawnAnchor();}const prev=focus.current;const preLastActive=anchors[idx]?anchors[idx].lastActive:-9999;if(idx!==focus.current)switchTo(idx,'turn');else if(focusFatigue(focus.current)>.72){maybeSwitchFocus();idx=focus.current;}const a=anchors[idx];const fatigue=idx===focus.current?focusFatigue(idx):0;const cscale=contentImpulseScale();const intensity=clamp(turn.intensity*(.86+.18*rnd())*(.42+.58*cscale)*(1-.34*fatigue),.12,1.12);const dormantFrames=T-(preLastActive==null?-9999:preLastActive);if(a&&T-(a.bornT||0)>720&&dormantFrames>980)wakeDeposits(idx,intensity*(turn.cat==='memory'?1.08:1),idx!==prev?'turn-switch':'turn');a.pulse=Math.max(a.pulse||0,intensity);a.whitePulse=Math.max(a.whitePulse||0,turn.white);a.lastActive=T;chatPulse={anchor:idx,type:impulseType(turn),level:intensity,white:turn.white,age:0,duration:Math.round(120+turn.interval*.32)};lastImpulseT=T;turnIndex++;spawnImpulse(idx,chatPulse.type,intensity,turn.white,Math.round(2+intensity*4.0*set.density));if(idx!==prev)startAnchorRun(prev,idx,'turn');else if(rnd()<simChance(.32*set.runlight))startNearestRun(a.x+rr(-18,18),a.y+rr(-18,18),glow(a.color,.30),'turn');const cadence=Math.max(85,turn.interval*(.78-.10*set.switchRate)+rr(-30,55));nextTurnT=T+Math.round(cadence/Math.max(.55,set.tempo));}
+function maybeTurnImpulse(){const turns=analysis.turns||[];if(!turns.length)return;if(turnIndex>=turns.length||allTurnsDoneAt>=0)return;const turn=turns[turnIndex];const due=turn&&turn.fireP!=null?turn.fireP:0;const p=runProgressEstimate();if(p+.006<due)return;if(T<nextTurnT)return;if(T-lastImpulseT<70)return;triggerTurnImpulse();}
+
+function depositPosition(d){
+  const a=anchors[d.home];
+  if(!a||d.localX==null||d.fixedX==null)return {x:d.x,y:d.y,moveX:0,moveY:0,attach:0};
+  const at=clamp(d.attach==null?0:d.attach,0,.90);
+  const tx=a.x+d.localX,ty=a.y+d.localY;
+  const x=mix(d.fixedX,tx,at),y=mix(d.fixedY,ty,at);
+  return {x,y,moveX:x-d.fixedX,moveY:y-d.fixedY,attach:at};
+}
+function bindDepositToCluster(dep,x,y,locked){
+  const a=anchors[dep.home];
+  dep.fixedX=x;dep.fixedY=y;
+  if(a){dep.localX=x-a.x;dep.localY=y-a.y;}else{dep.localX=0;dep.localY=0;}
+  const centerish=dep.type==='center'||dep.type==='fusion'||dep.permanent||locked;
+  const spider=dep.type==='spider';
+  // Nicht alles wandert mit: ein Teil bleibt Sediment, ein Teil bildet den beweglichen Cluster-Mantel.
+  dep.attachMax=clamp((centerish?.60:.46)+(spider?.08:0)+rnd(.16),.34,.86);
+  dep.attach=dep.attachMax;
+  dep.attachFloor=centerish?(.20+rnd(.10)):(spider?(.15+rnd(.08)):(.045+rnd(.055)));
+  dep.attachDecay=centerish?(.000032+rnd(.000030)):(spider?(.00016+rnd(.00010)):(.00054+rnd(.00034)));
+  return dep;
+}
+const mem={deposits:[],connections:[],
+ add(x,y,r,color,type,rel,locked){
+   const opt=(locked&&typeof locked==='object')?locked:null;
+   const hardLocked=opt?!!opt.locked:!!locked;
+   const ghost=!!(opt&&opt.ghost);
+   const terminal=!!(opt&&opt.terminal);
+   const hull=!!(opt&&opt.hull);
+   const hullRadius=(opt&&opt.hullR)?opt.hullR:0;
+   const merge=!!(opt&&opt.merge);
+   const force=!!(opt&&opt.force);
+   r=clamp(r,2.4,34);
+   const minD=hardLocked?Math.max(7,r*.65):Math.max(5,r*(ghost?.72:.90));
+   if(!force&&!hardLocked){
+     let near=null,nearDist=Infinity;
+     for(const d of this.deposits){
+       const p=depositPosition(d),dd=dist(p.x,p.y,x,y),lim=Math.min(minD,d.r*(ghost?.62:.85));
+       if(dd<lim&&dd<nearDist){near=d;nearDist=dd;}
+     }
+     if(near){
+       if(merge){
+         // Ein verschwindendes Objekt wird nicht geloescht: bei Nachbarschaft
+         // verdichtet es leise ein vorhandenes Sediment, statt eine harte Doppelspur zu erzeugen.
+         const baseMix=saturate(temperedWhite(color),1.04);
+         const residueAlpha=ghost?(terminal ? .285 : .065):.030;
+         const residueEnergy=ghost?(terminal ? .640 : .22):.30;
+         const residueMaturity=ghost?(terminal ? .220 : .065):.040;
+         near.alpha=Math.max(near.alpha,residueAlpha);
+         near.energy=Math.max(near.energy,residueEnergy);
+         near.maturity=Math.max(near.maturity||0,residueMaturity);
+         near.terminal=near.terminal||terminal;
+         if(terminal||hull){
+           near.hull=Math.max(near.hull||0,terminal?.52:.30);
+           near.hullR=Math.max(near.hullR||0,hullRadius||r*(terminal?1.50:1.30));
+           if(terminal){
+             near.shadow=Math.max(near.shadow||0,.30);
+             near.shadowFloor=Math.max(near.shadowFloor||0,TERMINAL_SHADOW_FLOOR);
+             near.shadowR=Math.max(near.shadowR||0,hullRadius||r*1.42);
+           }
+           if(near.hullPhase==null)near.hullPhase=rnd(Math.PI*2);
+           near.hullAge=0;
+         }
+         near.color=blend(near.color,baseMix,ghost?(terminal ? .08 : .08):.06);
+         near.accent=blend(near.accent||near.color,accentColor(baseMix,type,x,y),ghost?(terminal ? .065 : .07):.05);
+         near.age=Math.min(near.age,Math.max(0,near.age-(terminal?42:18)));
+         return near;
+       }
+       return null;
+     }
+   }
+   const base=saturate(temperedWhite(color),1.06);
+   const dep={x,y,r,color:base,accent:accentColor(base,type,x,y),type,rel:rel.map(p=>[p[0],p[1]]),age:0,alpha:hardLocked ? .76 : (ghost ? (terminal ? .285 : .065) : 0),energy:hardLocked ? .86 : (ghost ? (terminal ? .64 : .22) : .36),maturity:hardLocked ? .32 : (ghost&&terminal ? .22 : 0),locked:hardLocked,ghost,terminal,hull:(terminal||hull)?(terminal?.52:.30):0,hullR:hullRadius||r*((terminal||hull)?(terminal?(1.58+rnd(.20)):(1.30+rnd(.12))):1),hullAge:0,hullPhase:rnd(Math.PI*2),shadow:terminal?.30:0,shadowFloor:terminal?TERMINAL_SHADOW_FLOOR:0,shadowR:hullRadius||r*1.42,home:nearestAnchor(x,y),permanent:hardLocked||type==='spider'&&hardLocked,wake:0,lastWakeT:-9999,spinUid:rnd(1),spinPhase:rnd(Math.PI*2)};
+   bindDepositToCluster(dep,x,y,hardLocked);
+   if(ghost){dep.attachMax=clamp(dep.attachMax*(terminal ? .86 : .74),terminal ? .34 : .22,terminal ? .70 : .58);dep.attachFloor=clamp(dep.attachFloor*(terminal ? 1.04 : .72),terminal ? .050 : .012,terminal ? .150 : .075);dep.attachDecay*=terminal ? .46 : .68;}
+   this.deposits.push(dep);
+   this.connect(dep);
+   return dep;
+ },
+ addAnchorTrace(i){const a=anchors[i];if(!a)return;const rel=relShape(14+(i%3)*2,a.profile,T*.003+a.profile.phase,.80);this.add(a.x,a.y,16,a.color,'center',rel,true);},
+ connect(dep){
+   const maxConn=Math.round(2200+set.network*2600+memoryLevel()*900),localCap=Math.round(4+set.network*5);
+   let added=0,pressure=clamp(1-this.connections.length/maxConn,.18,1);
+   const dp=depositPosition(dep);
+   for(const d of this.deposits.slice(0,-1)){
+     const pp=depositPosition(d);
+     const dd=dist(pp.x,pp.y,dp.x,dp.y);
+     if(dd<Math.max(d.r,dep.r)*(5.9+set.network)&&dd>4&&rnd()<.34*set.network*pressure){
+       const cp=keepLinkControlInFrame((pp.x+dp.x)/2+rr(-55,55),(pp.y+dp.y)/2+rr(-55,55),Math.max(16,Math.max(d.r,dep.r)*1.2));
+       this.connections.push({a:d,b:dep,str:0,maxStr:.09+rnd(.25),cpx:cp.x,cpy:cp.y,phase:rnd(Math.PI*2)});
+       if(++added>=localCap)break;
+     }
+   }
+   if(this.connections.length>maxConn)this.connections.splice(0,this.connections.length-maxConn);
+ },
+ tick(){
+   const ml=memoryLevel(),forget=clamp((.42-ml)/.32,0,1);
+   for(const d of this.deposits){
+     d.age+=slowDt();
+     const ghost=!!d.ghost,terminal=!!d.terminal;
+     if(d.wake){d.wake*=Math.pow(SEDIMENT_WAKE_DECAY,tempoDt());if(d.wake<.006)d.wake=0;}
+     if(d.hull){
+       d.hullAge=(d.hullAge||0)+slowDt();
+       d.hull=d.hull*Math.pow(terminal?.990:.986,tempoDt());
+       if(d.hull<.018)d.hull=0;
+     }
+     if(terminal){
+       d.shadowAge=(d.shadowAge||0)+slowDt();
+       const sf=Math.max(d.shadowFloor||0,TERMINAL_SHADOW_FLOOR);
+       d.shadow=Math.max(sf,(d.shadow||sf)*Math.pow(TERMINAL_SHADOW_DECAY,tempoDt()));
+     }
+     const alphaMax=d.permanent ? 1 : (ghost ? (terminal ? .46 : .18) : 1);
+     const energyMax=d.permanent ? .94 : (ghost ? (terminal ? .68 : .24) : .70);
+     const matureMax=ghost ? (terminal ? .64 : .42) : 1;
+     d.alpha=Math.min(alphaMax,d.alpha+.0068*set.memory*slowDt()*(ghost ? (terminal ? .22 : .18) : 1));
+     d.energy=Math.min(energyMax,d.energy+.00095*set.memory*slowDt()*(ghost ? (terminal ? .18 : .14) : 1));
+     d.maturity=Math.min(matureMax,(d.maturity||0)+(d.permanent ? .00145 : (ghost ? (terminal ? .00018 : .00012) : .00034))*set.memory*slowDt());
+     const a=anchors[d.home];
+     if(a&&d.attach!=null){
+       const activeLift=clamp((a.activity||0)*.0022+(a.birthBoost||0)*.0020+anchorPulse(d.home)*.0016+(d.wake||0)*.0019,0,.0078)*tempoDt();
+       const decay=(d.attachDecay||.0004)*tempoDt()*(1+forget*2.4)*(d.permanent?.62:1.0);
+       d.attach=clamp(d.attach+activeLift-decay,d.attachFloor||0,d.attachMax||.80);
+     }
+     if(forget>0){
+       const floor=d.permanent?.10:(terminal?.070:(d.ghost?.030:.018));
+       d.energy=Math.max(floor,d.energy*(1-(d.permanent?.00028:(d.ghost?(terminal?.00028:.00036):.00115))*forget*slowDt()));
+       d.alpha=Math.max(floor,d.alpha*(1-(d.permanent?.00018:(d.ghost?(terminal?.00022:.00030):.00095))*forget*slowDt()));
+     }
+   }
+   for(const c of this.connections){if(c.str<c.maxStr)c.str+=.00050*set.memory*set.network*slowDt();if(forget>0)c.str*=1-.00075*forget*slowDt();c.cpx+=Math.sin(T*.00038+c.phase)*.018*slowDt();c.cpy+=Math.cos(T*.00035+c.phase)*.018*slowDt();const cp=keepLinkControlInFrame(c.cpx,c.cpy,20);c.cpx=cp.x;c.cpy=cp.y;}
+ },
+ draw(){
+   const c=ctx['c-mem'];
+   c.clearRect(0,0,W,H);
+   c.save();
+   sceneTransform(c);
+   drawAnchorNetwork(c);
+   for(const cn of this.connections){
+     if(cn.str<.005)continue;
+     const a=cn.a,b=cn.b,pa=depositPosition(a),pb=depositPosition(b);
+     const al=cn.str*Math.min(a.alpha*a.energy,b.alpha*b.energy)*(.60+.12*set.contrast);
+     if(al<.006)continue;
+     const mid=glow(blend(a.color,b.color,.5),.42);
+     const offX=(pa.moveX+pb.moveX)*.46,offY=(pa.moveY+pb.moveY)*.46;
+     const cx=cn.cpx+offX,cy=cn.cpy+offY;
+     const g=c.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+     g.addColorStop(0,rgba(saturate(a.color,1.16),al*.70));
+     g.addColorStop(.5,rgba(mid,al*.42));
+     g.addColorStop(1,rgba(saturate(b.color,1.16),al*.70));
+     c.beginPath();c.moveTo(pa.x,pa.y);c.quadraticCurveTo(cx,cy,pb.x,pb.y);c.strokeStyle=g;c.lineWidth=.36+cn.str*2.35;c.stroke();
+     if((a.permanent||b.permanent)&&al>.018){c.beginPath();c.moveTo(pa.x,pa.y);c.quadraticCurveTo(cx,cy,pb.x,pb.y);c.strokeStyle=rgba(glow(mid,.58),al*.075*set.contrast);c.lineWidth=.14+cn.str*.65;c.stroke();}
+   }
+   for(const d of this.deposits){
+     const p=depositPosition(d);
+     const mat=d.maturity||0,ml=memoryLevel();
+     const ghost=!!d.ghost;
+     const terminal=!!d.terminal;
+     const wake=clamp(d.wake||0,0,1);
+     const minAl=d.permanent ? .14*ml : (ghost ? (terminal ? Math.max(.055,.050*ml) : .012*ml) : .035*ml);
+     const maxAl=d.permanent ? .80*Math.min(1.15,ml) : (ghost ? (terminal ? .310*Math.min(1.12,Math.max(.68,ml)) : .105*Math.min(1.10,ml)) : .56*Math.min(1.10,ml));
+     const wakeAl=wake*(ghost ? (terminal ? .032 : .034) : .060)*ml;
+     const al=clamp(d.alpha*d.energy*ml+wakeAl,minAl,maxAl+wake*(ghost ? .075 : .135));
+     const accRaw=d.accent||accentColor(d.color,d.type,p.x,p.y);
+     const base=saturate(blend(d.color,accRaw,wake*.075),1+(d.permanent ? .48 : .18)*mat*set.contrast+wake*.10);
+     const acc=saturate(accRaw,1.08+.38*mat+wake*.12);
+     const hi=glow(acc,.48+.25*mat+wake*.10);
+     c.save();
+     if(wake>.015){
+       const wakeR=d.r*(2.05+1.20*wake+(d.permanent?.55:0));
+       const wg=c.createRadialGradient(p.x,p.y,0,p.x,p.y,wakeR);
+       wg.addColorStop(0,rgba(glow(acc,.32),al*(.050+.080*wake)));
+       wg.addColorStop(.46,rgba(base,al*(.026+.032*wake)));
+       wg.addColorStop(1,'rgba(0,0,0,0)');
+       c.beginPath();c.arc(p.x,p.y,wakeR,0,Math.PI*2);c.fillStyle=wg;c.fill();
+     }
+     if(d.permanent){
+       const haloR=d.r*(3.0+1.1*mat);
+       const halo=c.createRadialGradient(p.x,p.y,0,p.x,p.y,haloR);
+       halo.addColorStop(0,rgba(base,al*(.10+.06*mat)));
+       halo.addColorStop(.38,rgba(acc,al*(.035+.035*mat)));
+       halo.addColorStop(1,'rgba(0,0,0,0)');
+       c.beginPath();c.arc(p.x,p.y,haloR,0,Math.PI*2);c.fillStyle=halo;c.fill();
+     }
+     drawSedimentShadow(c,p,d,base,acc,al,wake);
+     drawSedimentHull(c,p,d,base,acc,al,wake);
+     if(d.type==='spider'){
+       drawSpiderTrace(c,Object.assign({},d,{x:p.x,y:p.y,color:base}),al*(d.permanent ? .96 : (ghost ? .36 : .72)));
+       if(d.permanent&&mat>.36){const core=relShape(d.r*.34,profile('spider',d.type),T*.002+d.spinPhase,.55);drawClosed(c,p.x,p.y,core,acc,al*(.055+.085*mat),.012,.12+.08*mat);}
+     }else{
+       if(ghost){
+         drawClosed(c,p.x,p.y,d.rel,base,al*(terminal ? .74 : .46),terminal ? .026 : .030,terminal ? .22 : .18);
+       }else{
+         drawClosed(c,p.x,p.y,d.rel,base,al*(d.permanent?1.02:.76),d.permanent ? .12 : .075,d.permanent ? .72 : .42);
+       }
+       if(wake>.018){
+         const wakeRel=d.rel.map(q=>[q[0]*(1.02+.035*wake),q[1]*(1.02+.035*wake)]);
+         drawClosed(c,p.x,p.y,wakeRel,hi,al*(.050+.095*wake),0,.10+.12*wake);
+       }
+       if(d.permanent){
+         const inner=d.rel.map(q=>[q[0]*(.54-.04*mat),q[1]*(.54-.04*mat)]);
+         drawClosed(c,p.x,p.y,inner,acc,al*(.105+.065*mat),.010,.16+.05*mat);
+         const ridge=d.rel.map(q=>[q[0]*(.82+.05*Math.sin(d.age*.003)),q[1]*(.82+.05*Math.cos(d.age*.0027))]);
+         drawClosed(c,p.x,p.y,ridge,hi,al*(.040+.105*mat),0,.10+.11*mat);
+         if(mat>.62){const coreR=Math.max(2.0,d.r*(.20+.045*Math.sin(d.age*.015)));const cg=c.createRadialGradient(p.x,p.y,0,p.x,p.y,coreR);cg.addColorStop(0,rgba(acc,al*(.030+.040*mat)));cg.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(p.x,p.y,coreR,0,Math.PI*2);c.fillStyle=cg;c.fill();}
+       }
+     }
+     c.restore();
+   }
+   /* Anker nicht als Punkte markieren: ihre Lage zeigt sich nur ueber Aktivitaet, Filamente und Spuren. */
+   if(set.show)drawAnchorCores(c,true);
+   c.restore();
+ }
+};
+
+
+function wakeDeposits(anchor,intensity,reason){
+  const a=anchors[anchor];
+  if(!a||!mem||!mem.deposits||!mem.deposits.length)return 0;
+  const cooldown=reason==='turn'||reason==='turn-switch'?SEDIMENT_WAKE_COOLDOWN:Math.round(SEDIMENT_WAKE_COOLDOWN*1.35);
+  if(T-(a.lastSedimentWakeT||-9999)<cooldown)return 0;
+  const strength=clamp(intensity==null?.45:intensity,.12,1.18);
+  const candidates=[];
+  const base=Math.min(W,H);
+  const maxLook=Math.min(mem.deposits.length,520);
+  for(let k=0;k<maxLook;k++){
+    const d=mem.deposits[mem.deposits.length-1-k];
+    if(!d||d.home!==anchor)continue;
+    if(d.age<170&&!d.permanent)continue;
+    if((d.wake||0)>.38)continue;
+    const p=depositPosition(d);
+    const vis=clamp((d.alpha||0)*(d.energy||0),0,1);
+    const oldness=clamp((d.age||0)/2200,0,1);
+    const sediment=clamp(1-(d.attach||0)*.45,0,1);
+    const away=clamp(dist(p.x,p.y,a.x,a.y)/(base*.18),0,1);
+    const score=oldness*.45+sediment*.28+vis*.22+away*.14+(d.permanent?.20:0)+(d.terminal?.10:0)+rnd(.18);
+    candidates.push({d,p,score});
+  }
+  if(!candidates.length)return 0;
+  candidates.sort((u,v)=>v.score-u.score);
+  const count=clamp(1+Math.floor(strength*2.15+(reason==='turn-switch'||reason==='late'?0.45:0)),1,3);
+  let woke=0;
+  for(let i=0;i<candidates.length&&woke<count;i++){
+    const item=candidates[i],d=item.d;
+    const local=clamp(strength*(.82+.28*rnd()),.12,1.18);
+    d.wake=Math.max(d.wake||0,clamp(.28+.48*local+(d.permanent?.10:0)+(d.terminal?.05:0),.26,.92));
+    d.lastWakeT=T;
+    d.alpha=Math.max(d.alpha,d.ghost?(.070+.050*local):(.110+.070*local));
+    d.energy=Math.max(d.energy,d.ghost?(.230+.065*local):(.260+.105*local));
+    d.maturity=Math.max(d.maturity||0,d.ghost?(.070+.040*local):(.105+.050*local));
+    if(d.attach!=null)d.attach=clamp(d.attach+(.025+.055*local),d.attachFloor||0,d.attachMax||.82);
+    if(woke===0&&set.runlight>.25&&rnd()<simChance(.14*set.runlight*local))startNearestRun(item.p.x,item.p.y,glow(d.color,.20),'memory');
+    woke++;
+  }
+  if(woke){a.lastSedimentWakeT=T;a.birthBoost=Math.max(a.birthBoost||0,.055+.085*strength);}
+  return woke;
+}
+
+function drawAnchorCores(c,overlay){
+  const ml=memoryLevel(),base=Math.min(W,H);
+  c.save();
+  for(let i=0;i<activeCount();i++){
+    const a=anchors[i];
+    if(!a)continue;
+    const hx=a.homeX==null?a.x:a.homeX,hy=a.homeY==null?a.y:a.homeY;
+    const drift=dist(a.x,a.y,hx,hy)/base;
+    const speed=Math.hypot(a.driftVX||0,a.driftVY||0,a.vx||0,a.vy||0);
+    const visible=overlay||drift>.002||speed>.004||a.activity>.060||i===focus.current||(a.birthBoost||0)>.08;
+    if(!visible)continue;
+    const move=clamp(drift*24+speed*.80,0,.82);
+    const al=clamp((.026+a.activity*.074+(a.birthBoost||0)*.034+move*.150)*ml*(overlay?1.26:1),.012,overlay?.245:.165);
+    // Bei driftenden Zentren bleibt der alte Sedimentort sichtbar, aber der aktuelle Kern
+    // bekommt eine eigene, bewegte Lesbarkeit. Das ist keine Filamentbewegung, sondern
+    // die momentane Lage des Zentrums.
+    if(overlay&&drift>.003){
+      const mx=(a.x+hx)/2+Math.sin((a.fieldPhase||0)*6.28+T*.001)*base*.010;
+      const my=(a.y+hy)/2+Math.cos((a.fieldPhase||0)*6.28+T*.001)*base*.010;
+      c.beginPath();c.moveTo(hx,hy);c.quadraticCurveTo(mx,my,a.x,a.y);
+      c.strokeStyle=rgba(glow(a.color,.52),clamp(.026+drift*.62,0,.16)*ml);
+      c.lineWidth=.28+drift*11;
+      c.stroke();
+    }
+    const rad=14+a.mass*16+anchorGravity(i)*4.5+move*7;
+    const g=c.createRadialGradient(a.x,a.y,0,a.x,a.y,rad*(overlay?3.25:2.95));
+    g.addColorStop(0,rgba(glow(a.color,overlay?.42:.28),al*.68));
+    g.addColorStop(.36,rgba(saturate(a.color,1.28),al*.24));
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    c.beginPath();c.arc(a.x,a.y,rad*(overlay?3.25:2.95),0,Math.PI*2);c.fillStyle=g;c.fill();
+    const rel=relShape(6.4+a.mass*6.8+move*4.2,a.profile,T*.0025+a.profile.phase,.58);
+    drawClosed(c,a.x,a.y,rel,glow(a.color,overlay?.36:.20),al*(overlay?1.06:.76),.04,.32+.13*move);
+  }
+  c.restore();
+}
+function drawAnchorNetwork(c){const ml=memoryLevel();for(const l of anchorLinks){const A=anchors[l.a],B=anchors[l.b];if(!A||!B||l.a>=activeCount()||l.b>=activeCount())continue;const active=(l.a===focus.current||l.b===focus.current);const gAvg=(anchorGravity(l.a)+anchorGravity(l.b))*.5;const al=l.str*set.network*ml*(active ? .68 : .50)*(0.88+gAvg*.10);const mid=glow(blend(A.color,B.color,.5),active ? .55 : .40);const g=c.createLinearGradient(A.x,A.y,B.x,B.y);g.addColorStop(0,rgba(saturate(A.color,1.20),al*.58));g.addColorStop(.5,rgba(mid,al*.46));g.addColorStop(1,rgba(saturate(B.color,1.20),al*.58));c.beginPath();c.moveTo(A.x,A.y);c.quadraticCurveTo(l.cpx,l.cpy,B.x,B.y);c.strokeStyle=g;c.lineWidth=(.34+l.str*(active?2.25:1.75))*(0.90+gAvg*.08);c.stroke();if(active&&set.runlight>.25){c.beginPath();c.moveTo(A.x,A.y);c.quadraticCurveTo(l.cpx,l.cpy,B.x,B.y);c.strokeStyle=rgba(glow(mid,.62),al*.065);c.lineWidth=.16+l.str*.55;c.stroke();}}if(set.show)drawAnchorCores(c);}
+
+
+function colorFamily(c){
+  if(!c)return 'other';
+  const r=c[0],g=c[1],b=c[2],sum=r+g+b;
+  if(sum<155)return 'dark';
+  if(r>218&&g>218&&b>228&&Math.max(r,g,b)-Math.min(r,g,b)<44)return 'white';
+  if(r>g*1.10&&g>b*.72&&r>132)return 'orange';
+  if(b>r*1.16&&b>g*1.02)return 'blue';
+  if((r>92&&b>96&&b>g*1.10)||(r>g*1.18&&b>g*1.18))return 'violet';
+  return 'other';
+}
+function clusterColorStats(anchor){
+  const counts={blue:0,orange:0,violet:0,white:0,dark:0,other:0};let total=0;
+  function add(c,w){const f=colorFamily(c);const n=w||1;counts[f]=(counts[f]||0)+n;total+=n;}
+  for(const e of entities){
+    if(e.deadFlag||e.life<=0||e.anchor!==anchor)continue;
+    add(e.color,e.darkTone?.65:1);
+  }
+  if(typeof mem!=='undefined'&&mem.deposits){
+    const start=Math.max(0,mem.deposits.length-380);
+    for(let i=mem.deposits.length-1;i>=start;i--){
+      const d=mem.deposits[i];
+      if(d.home!==anchor)continue;
+      const vis=clamp((d.alpha||0)*(d.energy||0),0,1);
+      if(vis<.055)continue;
+      add(d.color,(d.permanent?1.05:.58)*vis);
+      if(d.accent)add(d.accent,.35*vis);
+    }
+  }
+  let dom='other',dv=-1;for(const k in counts){if(counts[k]>dv){dv=counts[k];dom=k;}}
+  return {counts,total,dom,share:total?dv/total:0};
+}
+function counterColorForFamily(fam,type,anchor){
+  const h=hash((type||'form')+'|counter|'+anchor+'|'+fam+'|'+layoutSalt);
+  const oranges=[[224,132,38],[238,146,48],[206,104,34],[232,168,70]];
+  const blues=[[58,88,206],[74,106,226],[48,74,184],[86,116,212]];
+  const violets=[[142,62,170],[112,48,150],[166,76,154]];
+  const whites=[[246,250,255],[232,240,255]];
+  if(fam==='blue'||fam==='violet'||fam==='white')return oranges[h%oranges.length];
+  if(fam==='orange')return (h&1)?blues[h%blues.length]:violets[h%violets.length];
+  if(fam==='dark')return (h&1)?oranges[h%oranges.length]:whites[h%whites.length];
+  return (h%3===0)?oranges[h%oranges.length]:((h%3===1)?blues[h%blues.length]:violets[h%violets.length]);
+}
+function balancedTypeForCluster(type,anchor){
+  if(type==='fusion')return type;
+  const st=clusterColorStats(anchor);
+  // Grundbias: ca. 50 % mehr orange im laufenden Entstehen, sofern Orange nicht schon dominiert.
+  if(st.dom!=='orange'&&rnd()<.095)return 'warm';
+  if(st.total<7||st.share<.58)return type;
+  if(rnd()>.62)return type;
+  if(st.dom==='orange')return ['cool','thought','dense','spider'][ri(4)];
+  if(st.dom==='blue'||st.dom==='violet'||st.dom==='white')return 'warm';
+  if(st.dom==='dark')return ['warm','thought','cool'][ri(3)];
+  return type;
+}
+function balancedColorForCluster(color,anchor,type,darkTone){
+  const st=clusterColorStats(anchor);
+  let out=color;
+  const orangeFam=colorFamily(out)==='orange';
+  if(st.dom!=='orange'&&!orangeFam&&rnd()<.075){
+    out=blend(out,counterColorForFamily('blue',type,anchor),darkTone?.16:.30);
+  }
+  if(st.total>=7&&st.share>.58){
+    const counter=counterColorForFamily(st.dom,type,anchor);
+    out=blend(out,counter,darkTone?.24:.46);
+  }
+  return temperedWhite(out);
+}
+
+class Entity{constructor(x,y,type,anchor){type=balancedTypeForCluster(type,anchor);this.x=x;this.y=y;this.type=type;this.anchor=anchor;this.profile=profile(type,(anchors[anchor]&&anchors[anchor].word)||'');this.uid=rnd(1);this.phase=rnd(Math.PI*2);this.age=0;this.life=.88+rnd(.18);this.cooldown=90+rnd(120);this.memTimer=rr(20,90);this.finalRemembered=false;this.finalHullRemembered=false;this.retiring=false;this.retireReason='';this.vx=rr(-.5,.5);this.vy=rr(-.45,.45);switch(type){case'cool':this.color=TYPE_COLOR.cool();this.targetR=9+rnd(22);this.decay=.00044+rnd(.00042);this.speed=.20+rnd(.28);break;case'warm':this.color=TYPE_COLOR.warm();this.targetR=8+rnd(19);this.decay=.00072+rnd(.00058);this.speed=.30+rnd(.48);break;case'thought':this.color=TYPE_COLOR.thought();this.targetR=10+rnd(22);this.decay=.00045+rnd(.00055);this.speed=.22+rnd(.31);break;case'dense':this.color=TYPE_COLOR.dense();this.targetR=8+rnd(16);this.decay=.00058+rnd(.00065);this.speed=.16+rnd(.22);break;case'fusion':this.color=TYPE_COLOR.fusion();this.targetR=15+rnd(19);this.decay=.00052+rnd(.00038);this.speed=.14+rnd(.20);break;case'spider':this.color=TYPE_COLOR.spider();this.targetR=7+rnd(14);this.decay=.00036+rnd(.00034);this.speed=.13+rnd(.20);this.memTimer=rr(35,95);break;}this.darkTone=mayUseDark(anchor);if(this.darkTone){this.color=shadowColor(this.color,anchor,type);this.life*=.96;}this.color=balancedColorForCluster(this.color,anchor,this.type,this.darkTone);this.color=temperedWhite(this.color);this.r=2+rnd(2);containEntity(this,true);}
+ tick(){const dt=tempoDt();if(dt<=0)return;this.age+=dt;this.cooldown-=dt;if(this.retiring){this.cooldown=9999;if(this.life<=TERMINAL_FINAL_HULL_LIFE&&!this.finalHullRemembered){const dep=this.archive(false,true,true);if(dep)this.finalHullRemembered=true;}this.life-=TERMINAL_RETIRE_DECAY*dt;this.vx*=Math.pow(.540,dt);this.vy*=Math.pow(.540,dt);this.x+=this.vx*this.speed*.006*dt;this.y+=this.vy*this.speed*.006*dt;containEntity(this,true);return;}const own=anchors[this.anchor]||anchors[focus.current]||anchors[0];const main=this.anchor===focus.current;const act=anchorWeight(this.anchor);const lp=anchorPulse(this.anchor);const imp=clamp((main?globalPulse()*.62:0)+lp*.56,0,1.2);const motion=clusterMotionWeight(this.anchor);const moveAmt=.14+.86*motion;this.life-=this.decay*dt*(.78+(act<.06 ? .58 : 0)+(imp<.08 ? .22 : 0));this.r+=Math.max(0,this.targetR-this.r)*(.010+.010*imp)*dt;const fp=focusPoint();let tx=own.x,ty=own.y;if(main){tx=mix(own.x,fp.x,.56+.22*imp);ty=mix(own.y,fp.y,.56+.22*imp);}else{const br=Math.sin(T*.00075+this.anchor*1.9+this.uid*5.1);tx+=br*(3+19*act+9*lp);ty+=Math.cos(T*.00062+this.anchor*1.4+this.uid*4.3)*(3+16*act+8*lp);}let dx=tx-this.x,dy=ty-this.y,dd=Math.hypot(dx,dy)+1;const pull=(main ? (.0027+.0030*set.focus*imp) : (.00065+.0012*(act+lp)))*(0.50+act*1.08+imp*.85)*moveAmt;this.vx+=dx/dd*pull*dt;this.vy+=dy/dd*pull*dt;for(let i=0;i<activeCount();i++){if(i===this.anchor)continue;const a=anchors[i],grav=anchorGravity(i),passive=Math.max(0,grav-.92)*.020,w=anchorWeight(i)+anchorPulse(i)*.30+passive;if(w<.022)continue;dx=a.x-this.x;dy=a.y-this.y;dd=Math.hypot(dx,dy)+1;const f=.00028*w*set.side*(i===focus.current?1.55:.62)*(0.82+grav*.18);this.vx+=dx/dd*f*dt;this.vy+=dy/dd*f*dt;const tangent=.00010*passive*set.network;this.vx+=(-dy/dd)*tangent*dt;this.vy+=(dx/dd)*tangent*dt;}dx=tx-this.x;dy=ty-this.y;dd=Math.hypot(dx,dy)+1;const baseSwirl=this.type==='warm' ? .00105 : (this.type==='spider' ? .00086 : .00062);const swirl=baseSwirl*(this.life+.2)*(.36+imp*.95+(main ? .18 : 0))*moveAmt;this.vx+=(-dy/dd)*swirl*dt;this.vy+=(dx/dd)*swirl*dt;if(dd>Math.min(W,H)*(.24+.08*act+.05*imp))this.life-=main ? .00055*dt : .0018*dt;const ebSoft=visibleEntitySoftBounds(this);if(this.x<ebSoft.left)this.vx+=(ebSoft.left-this.x)*.0012+.012;if(this.x>ebSoft.right)this.vx-=(this.x-ebSoft.right)*.0012+.012;if(this.y<ebSoft.top)this.vy+=(ebSoft.top-this.y)*.0010+.010;if(this.y>ebSoft.bottom)this.vy-=(this.y-ebSoft.bottom)*.0010+.010;this.vx*=Math.pow(main ? (.972-.006*imp) : .960,dt);this.vy*=Math.pow(main ? (.972-.006*imp) : .960,dt);const px=this.x,py=this.y;const stepScale=(.78+.38*imp)*moveAmt;this.x+=this.vx*this.speed*stepScale*dt;this.y+=this.vy*this.speed*stepScale*dt;containEntity(this,false);const clusterMoving=motion>.12;if(moveAmt>.20)maybeEmitFilament(this,px,py,main,act+imp*.35);if(anchors[this.anchor]&&clusterMoving){const rotA=0.0010*dt*motion;const rc=Math.cos(rotA),rs=Math.sin(rotA);const cx=anchors[this.anchor].x,cy=anchors[this.anchor].y;const ex=this.x-cx,ey=this.y-cy;this.x=cx+ex*rc-ey*rs;this.y=cy+ex*rs+ey*rc;this.memTimer=0;}containEntity(this,true);const movedThisFrame=dist(px,py,this.x,this.y);const vmag=Math.hypot(this.vx,this.vy)*this.speed*stepScale;const vmagRaw=Math.hypot(this.vx,this.vy)*this.speed;const terminalMoving=clusterMoving||movedThisFrame>TERMINAL_MOTION_EPS||vmag>TERMINAL_MOTION_EPS||vmagRaw>TERMINAL_MOTION_EPS;const handoffLife=terminalMoving?TERMINAL_HANDOFF_MOVING:TERMINAL_HANDOFF_STILL;if(this.life<=handoffLife&&!this.finalRemembered){const dep=this.archive(false,true,true);if(dep){this.retiring=true;this.retireReason='handoff';this.finalHullRemembered=false;this.cooldown=9999;return;}}if(!clusterMoving){this.memTimer+=dt;if(this.memTimer>(105-30*imp)/set.memory&&this.life>.35){this.archive(false,false);this.memTimer=0;}}if(this.life<=TERMINAL_HANDOFF_STILL&&!this.finalRemembered){const dep=this.archive(false,true,true);if(dep){this.retiring=true;this.retireReason='handoff';this.finalHullRemembered=false;this.cooldown=9999;}}} archive(lock,ghost,terminal){const keep=!ghost&&(!!lock||(this.type==='spider'&&rnd()<.22*set.memory));const scale=ghost?(terminal?.54:.42):(keep ? .76 : .50);const rel=relShape(this.r*scale,this.profile,T*.012+this.phase,.82);const ghostOpt=ghost?{locked:false,ghost:true,merge:!terminal,force:!!terminal,terminal:!!terminal,hull:!!terminal,hullR:terminal?this.r*TERMINAL_HULL_RADIUS_FACTOR:0}:keep;let dep=mem.add(this.x,this.y,this.r*scale,this.color,this.type,rel,ghostOpt);if(ghost&&!dep)dep=mem.add(this.x,this.y,this.r*scale,this.color,this.type,rel,{locked:false,ghost:true,force:true,terminal:!!terminal,hull:!!terminal,hullR:terminal?this.r*TERMINAL_HULL_RADIUS_FACTOR:0});if(ghost&&dep)this.finalRemembered=true;return dep;}
+ draw(){const c=ctx['c-live'];const a=clamp(this.life,0,1);const lp=anchorPulse(this.anchor);const rawWp=pulseWhite(this.anchor),wp=this.darkTone?rawWp*.38:rawWp;const morph=T*(this.type==='warm' ? (.004+.010*lp) : (this.type==='spider' ? (.003+.007*lp) : (.003+.008*lp)))+this.phase;c.save();if(this.type==='spider'){drawSpiderNode(c,this.x,this.y,this.r,this.profile,this.color,a,morph,this.uid);}else{drawMembrane(c,this.x,this.y,this.r,this.profile,this.color,a,morph);if(this.type==='fusion'){const inner=relShape(this.r*.34,this.profile,T*(.004+.006*lp)+2.1,.92);drawClosed(c,this.x,this.y,inner,lift(this.color,.08),a*.11,.012,.15);}if(wp>.06){const rel=relShape(this.r*(.88+.08*wp),this.profile,morph+1.2,.92);drawClosed(c,this.x,this.y,rel,glow(this.color,.62+.20*wp),a*(.08+.18*wp),0,.18+.28*wp);}}if(this.retiring&&a<.16)drawLiveHandoffHull(c,this.x,this.y,this.r,this.profile,this.color,a,morph,this.uid);c.restore();} dead(){return this.life<=TERMINAL_RETIRE_LIFE||this.deadFlag;}}
+function dissolveEntity(e,reason){if(!e)return;const dep=e.archive(false,true,true);if(dep)e.finalRemembered=true;e.finalHullRemembered=false;e.retiring=true;e.retireReason=reason||'dissolve';e.cooldown=9999;e.life=Math.max(Math.min(e.life,.44),.26);e.vx*=.04;e.vy*=.04;}
+function maybeSpawn(){const cscale=contentActivityScale();const maxEnt=simCap(Math.round(6+(22+set.density*18-6)*cscale),5);const pulse=globalPulse();const sustain=sustainPhase();const continuity=continuityPhase();const pulseEff=Math.max(pulse,.16*sustain,.11*continuity);const types=Object.keys(BASE_WEIGHTS);if(chatPulse&&rnd()<simChance((.020+.050*pulse)*set.density*tempoDt()*cscale)){spawnImpulse(chatPulse.anchor,chatPulse.type,pulse,chatPulse.white,1+(rnd()<pulse?1:0));}
+  for(const type of types){let p=BASE_WEIGHTS[type]*set.density*tempoDt()*(.20+1.45*pulseEff+.18*continuity)*cscale;if(type==='dense')p*=1+Math.min(.22,T/14000)+.10*continuity;if(type==='spider')p*=(.32+set.spider*.78)*(0.70+set.network*.18)*(T>160?1:.20)*(1+.16*continuity);if(pulseEff<.12&&type!=='spider')p*=(.42+.34*continuity);if(rnd()<simChance(p)&&entities.length<maxEnt){const a=chooseSpawnAnchor();const act=anchorWeight(a)+anchorPulse(a)*.55;if(a!==focus.current&&rnd()>clamp(.05+act*1.7,0,.44))continue;const o=originFor(a,1+(a===focus.current ? .02 : .24));const e=new Entity(o.x,o.y,type,a);const wp=pulseWhite(a);if(wp>.05)e.color=blend(e.color,[255,255,255],e.darkTone?(.025+.075*wp):(.10+.22*wp));entities.push(e);}}}function handleInteractions(){const add=[];for(let i=0;i<entities.length;i++){const a=entities[i];if(a.dead()||a.retiring)continue;for(let j=i+1;j<entities.length;j++){const b=entities[j];if(b.dead()||b.retiring)continue;const dx=b.x-a.x,dy=b.y-a.y,dd=Math.hypot(dx,dy)+.01;const sum=a.r+b.r;const ov=(sum-dd)/sum;if(ov<=0)continue;const same=(a.type===b.type||a.type==='fusion'||b.type==='fusion');const push=same ? .0017 : -.0010;a.vx-=dx/dd*ov*push;b.vx+=dx/dd*ov*push;a.vy-=dy/dd*ov*push;b.vy+=dy/dd*ov*push;if(ov>.24&&rnd()<simChance(.00185*set.fusion*tempoDt())&&a.cooldown<0&&b.cooldown<0){const fp=focusPoint();if(dist((a.x+b.x)*.5,(a.y+b.y)*.5,fp.x,fp.y)<Math.min(W,H)*.27||rnd()<.18){add.push(fuseEntities(a,b));dissolveEntity(a,'fusion');dissolveEntity(b,'fusion');break;}}else if(ov>.14&&rnd()<simChance(.0022*set.network*tempoDt())){const mx=(a.x+b.x)*.5+rr(-3,3),my=(a.y+b.y)*.5+rr(-3,3);const dom=a.life>b.life?a:b;const rel=relShape(Math.min(a.r,b.r)*.40,dom.profile,T*.010+dom.phase,.70);mem.add(mx,my,Math.min(a.r,b.r)*.42,blend(a.color,b.color,.5),dom.type,rel,(a.type==='spider'||b.type==='spider')&&rnd()<.30*set.memory);}}}for(const e of add)entities.push(e);}
+function fuseEntities(a,b){
+  const wa=a.r*a.r,wb=b.r*b.r;
+  let x=(a.x*wa+b.x*wb)/(wa+wb),y=(a.y*wa+b.y*wb)/(wa+wb);
+  const e=new Entity(x,y,(a.type==='spider'||b.type==='spider')&&rnd()<.45?'spider':'fusion',focus.current);
+  e.darkTone=(a.darkTone&&b.darkTone)||mayUseDark(focus.current);
+  e.color=temperedWhite(e.darkTone?shadowColor(blend(a.color,b.color,.52),focus.current,'fusion'):blend(a.color,b.color,.52));
+  e.profile=fuseProfile(a.profile,b.profile);
+  e.r=clamp(Math.sqrt(a.r*a.r+b.r*b.r)*.55,8,31);
+  e.targetR=clamp(Math.sqrt(a.targetR*a.targetR+b.targetR*b.targetR)*.57,13,37);
+  e.vx=(a.vx*wa+b.vx*wb)/(wa+wb)*.52;e.vy=(a.vy*wa+b.vy*wb)/(wa+wb)*.52;
+  e.life=.90;e.cooldown=230;
+  containEntity(e,true);
+  x=e.x;y=e.y;
+  const rel=relShape(e.r*.86,e.profile,T*.010+e.phase,.86);
+  mem.add(x,y,e.r*.86,e.color,'fusion',rel,true);
+  if(rnd()<simChance(.18*set.runlight))startNearestRun(x,y,e.color,'fusion');
+  requestEdgeSpiderAt(x,y,'fusion',1.12);
+  return e;
+}
+
+// ── RAND-SPIDER / STERNLAEUFER ────────────────────────────────────────
+// Aus Entwicklung II ist die Idee des offenen Linienbuendels uebernommen,
+// aber als seltenes, an Kontaktzonen gebundenes Bewegungsobjekt formuliert.
+// Es markiert kein Zentrum; es tastet nur Raender und Spannungsstellen ab.
+function clusterContextRadius(i){
+  const a=anchors[i];
+  if(!a)return 0;
+  const base=Math.min(W,H);
+  const act=anchorWeight(i),pul=anchorPulse(i),grav=anchorGravity(i);
+  const mature=clamp((a.age||0)/1400,0,1);
+  return base*(.066+.030*act+.022*pul+.018*mature+.012*Math.max(0,grav-1));
+}
+function anchorContactData(l){
+  const n=activeCount();
+  if(!l||l.a>=n||l.b>=n)return null;
+  const A=anchors[l.a],B=anchors[l.b];
+  if(!A||!B)return null;
+  const base=Math.min(W,H);
+  const d=dist(A.x,A.y,B.x,B.y)+.01;
+  const ra=clusterContextRadius(l.a),rb=clusterContextRadius(l.b);
+  const sum=ra+rb;
+  const gap=d-sum;
+  // Spider/Sterne sollen Rand- und Kontaktphaenomene bleiben. Lange,
+  // leere Verbindungslinien duerfen nicht als eigener Entstehungsraum gelten.
+  const contact=clamp(1-gap/(base*.125),0,1);
+  const overlap=clamp((sum-d)/(base*.085),0,1);
+  const bridge=clamp(1-d/(base*.50),0,1);
+  // Spider/Sterne benoetigen jetzt echte Randnaehe. Eine lange, leere
+  // Beziehung darf nicht mehr genuegen, nur weil zwei Cluster verbunden sind.
+  if(contact<=.18 && overlap<.05)return null;
+  if(d>base*.50 && contact<.34)return null;
+  if(gap>base*.105 && contact<.35)return null;
+  return {A,B,base,d,ra,rb,gap,contact,overlap,bridge};
+}
+function localSpiderContext(x,y,l,data){
+  data=data||anchorContactData(l);
+  if(!data)return false;
+  const {A,B,base,ra,rb,d,contact}=data;
+  const vx=B.x-A.x,vy=B.y-A.y;
+  const dd=d*d+.01;
+  const proj=((x-A.x)*vx+(y-A.y)*vy)/dd;
+  // Nicht jenseits der Cluster: der Ort muss im Zwischen- oder Randbereich
+  // der beteiligten Cluster liegen, nicht vor/hinter einem Cluster im Leerraum.
+  if(proj<-.035||proj>1.035)return false;
+  const da=dist(x,y,A.x,A.y),db=dist(x,y,B.x,B.y);
+  const along=da+db<d+base*.032;
+  const nearA=da<ra*1.10+base*.026;
+  const nearB=db<rb*1.10+base*.026;
+  const contactBand=along && da<ra+base*.068 && db<rb+base*.068;
+  let score=0;
+  if(nearA)score+=.76;
+  if(nearB)score+=.76;
+  if(contactBand)score+=1.10+.42*contact;
+  // Sichtbarer Kontext aus bereits entstandenen Sedimenten oder Live-Formen.
+  let depHits=0;
+  const look=Math.min(mem.deposits.length,110);
+  for(let k=0;k<look;k++){
+    const dep=mem.deposits[mem.deposits.length-1-k];
+    if(!dep)continue;
+    if(dep.home!==l.a&&dep.home!==l.b)continue;
+    const p=depositPosition(dep);
+    const pd=((p.x-A.x)*vx+(p.y-A.y)*vy)/dd;
+    if(pd<-.06||pd>1.06)continue;
+    const d0=dist(x,y,p.x,p.y);
+    if(d0<base*.048+dep.r*2.0){depHits++;score+=.32;if(depHits>=3)break;}
+  }
+  let entHits=0;
+  for(const e of entities){
+    if(e.anchor!==l.a&&e.anchor!==l.b)continue;
+    const ep=((e.x-A.x)*vx+(e.y-A.y)*vy)/dd;
+    if(ep<-.06||ep>1.06)continue;
+    if(dist(x,y,e.x,e.y)<base*.040+e.r*1.8){entHits++;score+=.28;if(entHits>=2)break;}
+  }
+  const hasLocalTrace=(depHits+entHits)>=1;
+  const clusterSurface=(da<ra+base*.030&&db<rb+base*.030)||(da<ra*.98)||(db<rb*.98);
+  // Kein freistehender Spider im Zwischenraum: Neben der geometrischen Kante
+  // muss lokal sichtbares Material oder eine echte Clusteroberflaeche vorhanden sein.
+  if(!(hasLocalTrace||clusterSurface))return false;
+  // Ein einzelner Randkontakt reicht nur, wenn dort wirklich Material liegt.
+  if(!contactBand && !(hasLocalTrace && (nearA||nearB) && contact>.22))return false;
+  return score>=1.16;
+}
+function contactTForLink(l,data){
+  data=data||anchorContactData(l);
+  if(!data)return .5;
+  const {d,ra,rb,overlap}=data;
+  if(overlap>.30)return clamp(.50+rr(-.10,.10),.22,.78);
+  const t=clamp(ra/d,.18,.82);
+  return clamp(t+rr(-.055,.055),.18,.82);
+}
+function edgeTangent(A,C,B,t,curve){
+  const qx=2*(1-t)*(C.x-A.x)+2*t*(B.x-C.x);
+  const qy=2*(1-t)*(C.y-A.y)+2*t*(B.y-C.y);
+  const lx=B.x-A.x,ly=B.y-A.y;
+  const k=clamp(curve==null?.62:curve,0,1);
+  return {x:mix(lx,qx,k),y:mix(ly,qy,k)};
+}
+function runProgressEstimate(){
+  if(!runStartMs)return clamp(T/(60*180),0,1);
+  const targetEnd=clamp((analysis&&analysis.targetRunMs)||MIN_MS,MIN_MS,MAX_MS);
+  return clamp((performance.now()-runStartMs)/Math.max(1,targetEnd),0,1);
+}
+function continuityPhase(){
+  const p=runProgressEstimate();
+  // Aktivitaetsbruecke: nach der initialen Clusterbildung bleibt die Arbeit
+  // zwischen ca. 10% und 92% des sichtbaren Verlaufs leise, aber kontinuierlich aktiv.
+  const rampIn=ease(clamp((p-.105)/.13,0,1));
+  const rampOut=1-ease(clamp((p-.92)/.08,0,1));
+  const mid=.58+.42*Math.sin(Math.PI*clamp((p-.105)/.815,0,1));
+  return clamp(rampIn*rampOut*mid,0,1);
+}
+function sustainPhase(){
+  const p=runProgressEstimate();
+  // Der spaete Sustain beginnt nicht erst bei knapp 50%, sondern baut sich
+  // bereits im mittleren Verlauf sanft auf und bleibt im letzten Drittel tragend.
+  const midLift=p<.32?0:ease(clamp((p-.32)/.25,0,1));
+  const lateLift=p<.58?0:ease(clamp((p-.58)/.28,0,1));
+  let afterLift=0;
+  if(allTurnsDoneAt>=0&&runStartMs){
+    const elapsed=performance.now()-runStartMs;
+    afterLift=ease(clamp((elapsed-allTurnsDoneAt)/52000,0,1));
+  }
+  return clamp(Math.max(midLift*.38,lateLift*.88,afterLift*.78),0,1);
+}
+function maybeSustainImpulse(){
+  const n=activeCount();
+  if(n<2)return;
+  const sustain=sustainPhase();
+  if(sustain<=.02)return;
+  if(chatPulse&&chatPulse.level>.20)return;
+  if(T-lastImpulseT<220)return;
+  const gap=simCooldown(Math.round((760-250*sustain)/Math.max(.58,set.tempo)));
+  if(T-lastSustainImpulseT<gap)return;
+  if(rnd()>.030*(.55+.45*sustain)*set.switchRate*tempoDt())return;
+  let best=-1,bs=-1;
+  for(let i=0;i<n;i++){
+    const a=anchors[i];
+    if(!a)continue;
+    const dormant=clamp((T-(a.lastActive||0))/5200,0,1);
+    const moving=clusterMotionWeight(i);
+    const rel=focus.current!=null&&linkFor(focus.current,i)?(linkFor(focus.current,i).str||.06):0;
+    const resting=(a.restUntil&&T<a.restUntil)?-.12:0;
+    const score=a.mass*.22+dormant*.48+rel*.38+(1-moving)*.18+anchorGravity(i)*.10+resting+rnd(.16);
+    if(score>bs){bs=score;best=i;}
+  }
+  if(best<0||!anchors[best])return;
+  const a=anchors[best];
+  const dormantFrames=T-(a.lastActive==null?-9999:a.lastActive);
+  if(best!==focus.current&&rnd()<.50+.22*sustain)switchTo(best,'late');
+  else promoteMovingCluster(best);
+  const cscale=contentImpulseScale();
+  const intensity=clamp((.25+.20*sustain+.06*anchorGravity(best))*cscale,.18,.54);
+  if(dormantFrames>1100||sustain>.46)wakeDeposits(best,intensity*(.78+.42*sustain),'late');
+  a.pulse=Math.max(a.pulse||0,intensity);
+  a.whitePulse=Math.max(a.whitePulse||0,.08+.11*sustain);
+  a.birthBoost=Math.max(a.birthBoost||0,.10+.18*sustain);
+  a.lastActive=T;
+  spawnImpulse(best,a.type==='dense'?'spider':a.type,intensity*.78,.08+.10*sustain,Math.round(1+set.density*(1.0+1.3*sustain)));
+  if(rnd()<simChance(.20*set.runlight*(.70+.30*sustain)))startNearestRun(a.x+rr(-12,12),a.y+rr(-12,12),glow(a.color,.24),'ambient');
+  lastSustainImpulseT=T;
+}
+function maybeContinuityImpulse(){
+  const n=activeCount();
+  if(n<2)return;
+  const cont=continuityPhase();
+  if(cont<=.025)return;
+  if(chatPulse&&chatPulse.level>.17)return;
+  if(T-lastImpulseT<150)return;
+  const gap=simCooldown(Math.round((560-230*cont)/Math.max(.58,set.tempo)));
+  if(T-lastContinuityImpulseT<gap)return;
+  const cscale=contentActivityScale();
+  const softCap=simCap(Math.round(10+set.density*16*cscale),5);
+  const quietBoost=entities.length<softCap?.34:0;
+  const prob=(.014+quietBoost*.010)*(.55+.45*cont)*set.switchRate*tempoDt();
+  if(rnd()>prob)return;
+  let best=-1,bs=-1;
+  for(let i=0;i<n;i++){
+    const a=anchors[i];
+    if(!a)continue;
+    const dormant=clamp((T-(a.lastActive||0))/4200,0,1);
+    const moving=clusterMotionWeight(i);
+    const rel=focus.current!=null&&linkFor(focus.current,i)?(linkFor(focus.current,i).str||.06):0;
+    const pulse=anchorPulse(i);
+    const rest=(a.restUntil&&T<a.restUntil)?-.18:0;
+    const notFocus=i===focus.current?-.08:.10;
+    const score=dormant*.42+(1-moving)*.20+rel*.32+anchorGravity(i)*.10+pulse*.16+notFocus+rest+rnd(.18);
+    if(score>bs){bs=score;best=i;}
+  }
+  if(best<0||!anchors[best])return;
+  const a=anchors[best];
+  const dormantFrames=T-(a.lastActive==null?-9999:a.lastActive);
+  if(best!==focus.current&&rnd()<.38+.24*cont)switchTo(best,'continuity');
+  else promoteMovingCluster(best);
+  const intensity=clamp((.20+.19*cont+.06*anchorGravity(best))*contentImpulseScale(),.16,.50);
+  if(dormantFrames>760)wakeDeposits(best,intensity*(.70+.35*cont),'continuity');
+  a.pulse=Math.max(a.pulse||0,intensity);
+  a.whitePulse=Math.max(a.whitePulse||0,.07+.09*cont);
+  a.birthBoost=Math.max(a.birthBoost||0,.08+.16*cont);
+  a.lastActive=T;
+  spawnImpulse(best,a.type==='dense'?'spider':a.type,intensity*.76,.07+.09*cont,Math.round(1+set.density*(.70+1.10*cont)));
+  if(rnd()<simChance(.16*set.runlight*(.65+.35*cont)))startNearestRun(a.x+rr(-13,13),a.y+rr(-13,13),glow(a.color,.22),'continuity');
+  lastContinuityImpulseT=T;
+}
+function spiderPhaseFactor(reason){
+  const p=runProgressEstimate();
+  // Zeitliche Balance: Spider/Sterne sollen nicht als Fruehphaenomen erscheinen.
+  // Der Beginn bleibt leicht gedaempft; mittlere und spaete Reifungsphasen
+  // werden stabil gehalten, damit Kontaktspannung weiter sichtbar bleibt.
+  let f;
+  if(p<.18) f=.62+.30*(p/.18);
+  else if(p<.62) f=.92+.12*ease((p-.18)/.44);
+  else f=1.04+.28*ease((p-.62)/.38);
+  if(reason==='birth'||reason==='fresh') f*=p<.28 ? (.62+.38*(p/.28)) : 1.00;
+  if(reason==='ambient'||reason==='contact') f*=p>.42 ? (1.06+.20*ease((p-.42)/.58)) : 1.00;
+  if(reason==='contrast'||reason==='approach'||reason==='switch') f*=1.00+.12*p;
+  // Wenn gerade wenige Spider aktiv sind, wird spaeter nicht weiter ausgeduennt.
+  if(edgeSpiderActiveCount()<2&&p>.34) f*=1.14+.18*p;
+  return clamp(f,.34,1.62);
+}
+function edgeSpiderPathLength(l,curve){
+  if(!l||!anchors[l.a]||!anchors[l.b])return Math.min(W,H)*.22;
+  const A=anchors[l.a],B=anchors[l.b],C={x:l.cpx,y:l.cpy};
+  const k=clamp(curve==null?.32:curve,0,.62);
+  let len=0,prev=runPos(A,C,B,0,k);
+  for(let i=1;i<=8;i++){
+    const p=runPos(A,C,B,i/8,k);
+    len+=dist(prev.x,prev.y,p.x,p.y);prev=p;
+  }
+  return Math.max(48,len);
+}
+function edgeSpiderLinkScore(l){
+  const data=anchorContactData(l);
+  if(!data)return -1;
+  const {contact,overlap,bridge,d,base}=data;
+  // Lange, leere Beziehungen werden stark bestraft. Spider sollen nicht allein im Raum stehen.
+  if(d>base*.62 && contact<.28)return -1;
+  const active=(l.a===focus.current||l.b===focus.current)?1:0;
+  const moving=(clusterMotionWeight(l.a)+clusterMotionWeight(l.b))*.5;
+  const pulse=(anchorPulse(l.a)+anchorPulse(l.b))*.5;
+  const activityA=anchorWeight(l.a)+anchorPulse(l.a)*.58+(anchors[l.a]?anchors[l.a].birthBoost||0:0)*.20;
+  const activityB=anchorWeight(l.b)+anchorPulse(l.b)*.58+(anchors[l.b]?anchors[l.b].birthBoost||0:0)*.20;
+  const contrast=clamp(Math.abs(activityA-activityB),0,1.2);
+  const g=(anchorGravity(l.a)+anchorGravity(l.b))*.5;
+  const str=clamp(l.str||0,0,.42)*3.1;
+  const fresh=clamp(1-(T-(l.freshT||0))/520,0,1);
+  const closing=clamp(l.closing||0,0,1.2);
+  return str*.46+contact*.78+overlap*.32+bridge*.14+active*.20+moving*.20+pulse*.22+contrast*.24+fresh*.30+closing*.32+g*.05+rnd(.12);
+}
+function linkForStimulus(a,b){
+  if(a==null||b==null||a===b||!anchors[a]||!anchors[b])return null;
+  let l=linkFor(a,b);
+  if(!l)l=connectAnchors(a,b,'stimulus');
+  return l;
+}
+function requestEdgeSpider(reason,a,b,power){
+  const l=linkForStimulus(a,b);
+  if(!l||!anchorContactData(l))return false;
+  const now=T;
+  if(l.lastStimT&&now-l.lastStimT<90)return false;
+  l.lastStimT=now;
+  edgeSpiderStimuli.push({link:l,reason:reason||'event',power:clamp(power||.8,.18,1.8),born:now,ttl:620});
+  if(edgeSpiderStimuli.length>simStimulusLimit())edgeSpiderStimuli.splice(0,edgeSpiderStimuli.length-simStimulusLimit());
+  return true;
+}
+function requestEdgeSpiderAt(x,y,reason,power){
+  let best=null,bs=-1;
+  for(const l of anchorLinks){
+    if(!l||l.a>=activeCount()||l.b>=activeCount())continue;
+    const data=anchorContactData(l);if(!data)continue;
+    const A=anchors[l.a],B=anchors[l.b],C={x:l.cpx,y:l.cpy};
+    let localBest=1e9;
+    for(let k=0;k<=6;k++){
+      const t=.12+k*.126;
+      const p=runPos(A,C,B,t,clamp(l.curve==null?.30:l.curve,0,.62));
+      localBest=Math.min(localBest,dist(x,y,p.x,p.y));
+    }
+    const score=edgeSpiderLinkScore(l)-localBest/(Math.min(W,H)*.16);
+    if(score>bs){bs=score;best=l;}
+  }
+  if(!best||bs<-.15)return false;
+  edgeSpiderStimuli.push({link:best,reason:reason||'local',power:clamp(power||.9,.18,1.8),born:T,ttl:520});
+  if(edgeSpiderStimuli.length>simStimulusLimit())edgeSpiderStimuli.splice(0,edgeSpiderStimuli.length-simStimulusLimit());
+  return true;
+}
+function updateEdgeSpiderStimuli(){
+  if(T-lastSpiderStateT<24)return;
+  lastSpiderStateT=T;
+  const base=Math.min(W,H);
+  for(const l of anchorLinks){
+    if(!l||l.a>=activeCount()||l.b>=activeCount())continue;
+    const data=anchorContactData(l);if(!data)continue;
+    const d=data.d;
+    const prev=l.lastD;
+    if(prev!=null){
+      const closing=clamp((prev-d)/(base*.010),0,1.2);
+      l.closing=mix(l.closing||0,closing,.38);
+      if(closing>.24&&data.contact>.16&&T-(l.lastApproachStimT||0)>simCooldown(760)){
+        l.lastApproachStimT=T;
+        edgeSpiderStimuli.push({link:l,reason:'approach',power:.52+closing*.46,born:T,ttl:420});
+      }
+    }
+    l.lastD=d;
+    const aAct=anchorWeight(l.a)+anchorPulse(l.a)*.65+(anchors[l.a]?anchors[l.a].birthBoost||0:0)*.20;
+    const bAct=anchorWeight(l.b)+anchorPulse(l.b)*.65+(anchors[l.b]?anchors[l.b].birthBoost||0:0)*.20;
+    const contrast=clamp(Math.abs(aAct-bAct),0,1.2);
+    l.contrast=mix(l.contrast||0,contrast,.25);
+    if(contrast>.42&&data.contact>.17&&T-(l.lastContrastStimT||0)>simCooldown(980)){
+      l.lastContrastStimT=T;
+      edgeSpiderStimuli.push({link:l,reason:'contrast',power:.44+contrast*.40,born:T,ttl:480});
+    }
+  }
+  if(edgeSpiderStimuli.length>simStimulusLimit())edgeSpiderStimuli.splice(0,edgeSpiderStimuli.length-simStimulusLimit());
+}
+function processEdgeSpiderStimuli(){
+  if(edgeSpiderActiveCount()>=EDGE_SPIDER_MAX||edgeSpiders.length>=EDGE_SPIDER_MAX+1)return false;
+  const now=T;
+  for(let i=edgeSpiderStimuli.length-1;i>=0;i--){
+    const st=edgeSpiderStimuli[i];
+    if(!st||!st.link||now-st.born>st.ttl||!anchorContactData(st.link))edgeSpiderStimuli.splice(i,1);
+  }
+  if(!edgeSpiderStimuli.length)return false;
+  edgeSpiderStimuli.sort((a,b)=>{
+    const sa=(a.power||0)+edgeSpiderLinkScore(a.link)*.40+(now-a.born)*.00045;
+    const sb=(b.power||0)+edgeSpiderLinkScore(b.link)*.40+(now-b.born)*.00045;
+    return sb-sa;
+  });
+  const attempts=Math.min(2,edgeSpiderStimuli.length);
+  for(let i=0;i<attempts&&edgeSpiderActiveCount()<EDGE_SPIDER_MAX&&edgeSpiders.length<EDGE_SPIDER_MAX+1;i++){
+    const st=edgeSpiderStimuli.shift();
+    if(!st)continue;
+    const urgency=clamp((now-st.born)/(st.ttl||1),0,1);
+    // Wieder etwas dichter kalibriert: etwa doppelte Ereigniswahrscheinlichkeit
+    // gegenueber der sehr sparsamen Balanciert-Fassung, aber weiterhin lokal entzerrt.
+    const chance=clamp(simChance((.42+(st.power||.7)*.30+urgency*.17)*spiderPhaseFactor(st.reason)),0,.92);
+    if(rnd()<chance&&spawnEdgeSpider(st.reason,st.link))return true;
+    if(urgency<.80){st.power*=.88;edgeSpiderStimuli.push(st);}
+  }
+  return false;
+}
+function chooseEdgeSpiderLink(){
+  const links=anchorLinks.filter(l=>l&&l.str>.010&&l.a<activeCount()&&l.b<activeCount()&&anchorContactData(l));
+  if(!links.length)return null;
+  let best=null,bs=-1;
+  for(const l of links){
+    const s=edgeSpiderLinkScore(l);
+    if(s>bs){bs=s;best=l;}
+  }
+  if(best&&rnd()<.76)return best;
+  let total=0,pool=[];
+  for(const l of links){const w=Math.max(.001,edgeSpiderLinkScore(l));pool.push({l,w});total+=w;}
+  let r=rnd(total);
+  for(const p of pool){r-=p.w;if(r<=0)return p.l;}
+  return best||links[0];
+}
+function pruneSpiderSites(){
+  for(let i=edgeSpiderSites.length-1;i>=0;i--){
+    const m=edgeSpiderSites[i];
+    if(!m||T-m.t>1700)edgeSpiderSites.splice(i,1);
+  }
+}
+function spiderCrowdingOK(x,y,l){
+  pruneSpiderSites();
+  const base=Math.min(W,H);
+  const nearR=base*.115;
+  for(const s of edgeSpiders){
+    const p=edgeSpiderPos(s);
+    if(!p)continue;
+    if(dist(x,y,p.x,p.y)<nearR)return false;
+    if(s.link===l&&Math.abs((s.u||.5)-(l.__testU||.5))<.24)return false;
+  }
+  for(const m of edgeSpiderSites){
+    if(dist(x,y,m.x,m.y)<nearR*.92)return false;
+    if(m.a===l.a&&m.b===l.b&&T-m.t<980)return false;
+  }
+  return true;
+}
+function rememberSpiderSite(x,y,l){
+  edgeSpiderSites.push({x,y,t:T,a:l.a,b:l.b});
+  if(edgeSpiderSites.length>15)edgeSpiderSites.splice(0,edgeSpiderSites.length-15);
+}
+function edgeSpiderPos(s){
+  const l=s.link;
+  const data=anchorContactData(l);
+  if(!data)return null;
+  const {A,B,base,ra,rb,contact}=data;
+  const C={x:l.cpx,y:l.cpy};
+  const curve=clamp(s.curve==null?.32:s.curve,0,.62);
+  const u=clamp(s.u,.08,.92);
+  const p=runPos(A,C,B,u,curve);
+  const tg=edgeTangent(A,C,B,u,curve);
+  const ln=Math.hypot(tg.x,tg.y)+.01;
+  let nx=-tg.y/ln,ny=tg.x/ln;
+  const pulse=(anchorPulse(l.a)+anchorPulse(l.b)+A.activity+B.activity)*.25;
+  const g=(anchorGravity(l.a)+anchorGravity(l.b))*.5;
+  const breathing=Math.sin(s.age*.033+s.phase)*base*.0024+Math.sin(s.age*.011+s.phase*1.7)*base*.0014;
+  const offMax=Math.min(ra,rb)*(.20+.08*contact)+base*.006;
+  let off=s.side*(base*(.006+.003*g)+pulse*base*.006+breathing);
+  off=clamp(off,-offMax,offMax);
+  let x=p.x+nx*off,y=p.y+ny*off;
+  // Falls der Normalversatz den Spider aus dem Kontext hebt, wird er an die Kante zurueckgezogen.
+  if(!localSpiderContext(x,y,l,data)){
+    x=mix(x,p.x,.82);y=mix(y,p.y,.82);
+  }
+  if(!localSpiderContext(x,y,l,data))return null;
+  const sb=insetVisibleBounds(.030,visiblePadForRadius((s.r||6)*1.20,'spider'));
+  if(x<sb.left||x>sb.right||y<sb.top||y>sb.bottom)return null;
+  return {x,y,tx:tg.x/ln,ty:tg.y/ln,nx,ny};
+}
+function spawnEdgeSpider(reason,preferredLink){
+  if(edgeSpiderActiveCount()>=EDGE_SPIDER_MAX||edgeSpiders.length>=EDGE_SPIDER_MAX+1||activeCount()<2)return false;
+  const eventReason=reason&&reason!=='contact'&&reason!=='ambient';
+  const minGap=simCooldown(eventReason?82:132);
+  if(T-lastEdgeSpiderT<minGap)return false;
+  let link=null;
+  if(preferredLink&&preferredLink.a<activeCount()&&preferredLink.b<activeCount()&&anchorContactData(preferredLink))link=preferredLink;
+  if(!link)link=chooseEdgeSpiderLink();
+  if(!link)return false;
+  const data=anchorContactData(link);
+  if(!data)return false;
+  const {A,B,contact,overlap}=data;
+  const minContact=eventReason?.14:.22;
+  if(contact<minContact&&overlap<.07)return false;
+  if(contact<.20&&rnd()<(eventReason?.54:.94))return false;
+  const mid=contactTForLink(link,data);
+  const dir=(mid<.38)?1:(mid>.62?-1:(rnd()<.5?-1:1));
+  const col=glow(blend(A.color,B.color,.5),.58);
+  const eventBoost=eventReason?.10:0;
+  const curve=rnd()<.72?0:rr(.12,.36);
+  const sizeFactor=rr(.50,1.00);
+  const spider={
+    link,u:mid,dir,side:rnd()<.5?-1:1,
+    // Spider folgen ueberwiegend geraden oder nur leicht gebogenen Strukturraendern.
+    curve,
+    // Konstante Bildschirmgeschwindigkeit statt langsamer wirkender U-Bewegung auf langen/alten Kanten.
+    speedPx:rr(1.45,2.55)*(0.92+set.tempo*.10)*(eventReason?1.04:1),
+    sizeFactor,
+    r:rr(5.4,9.2)*sizeFactor*(1+Math.min(.18,(anchorGravity(link.a)+anchorGravity(link.b)-2)*.05)+eventBoost),
+    color:blend(col,[252,253,255],.28+rnd(.18)),
+    age:0,life:rr(145,285)*(eventReason?1.02:1),phase:rnd(Math.PI*2),waveDir:rnd()<.5?-1:1,
+    // Eigenrotation: der Spider/Stern darf sich um seinen Mittelpunkt links oder rechts herum drehen.
+    // Langsamer als die Beinwelle, damit die Rotation nicht zur dominanten Bewegung wird.
+    spinDir:rnd()<.5?-1:1,spinRate:rr(.018,.034),
+    legs:11+ri(4),fadeIn:rr(16,30),fadeOut:rr(68,92),exiting:false,reason:reason||'edge',finalRemembered:false
+  };
+  // Kein freistehender Spider und keine lokale Haeufung am selben Randabschnitt.
+  const sp=edgeSpiderPos(spider);
+  if(!sp)return false;
+  link.__testU=spider.u;
+  const ok=spiderCrowdingOK(sp.x,sp.y,link);
+  delete link.__testU;
+  if(!ok)return false;
+  edgeSpiders.push(spider);
+  rememberSpiderSite(sp.x,sp.y,link);
+  lastEdgeSpiderT=T;
+  return true;
+}
+function maybeEdgeSpider(){
+  if(T<150||activeCount()<2)return;
+  updateEdgeSpiderStimuli();
+  // Ereignisgetriggerte Spider bleiben erhalten, aber zeitlich und lokal entzerrt.
+  if(processEdgeSpiderStimuli())return;
+  if(edgeSpiderActiveCount()>=EDGE_SPIDER_MAX||edgeSpiders.length>=EDGE_SPIDER_MAX+1)return;
+  const p=runProgressEstimate();
+  const gap=simCooldown(clamp(132-34*ease(p),88,132));
+  if(T-lastEdgeSpiderT<gap)return;
+  if(T-lastRunT<40&&rnd()<.22)return;
+  const contentForSpider=(analysis&&analysis.thinInput)?contentActivityScale()*.58:Math.max(.72,contentActivityScale());
+  const occupancy=edgeSpiderActiveCount()<2?(1.36+.28*ease(p)):1.0;
+  const rate=.00490*(.70+set.network*.40)*(0.72+set.spider*.42)*(1+Math.min(.38,anchorLinks.length*.020))*contentForSpider*occupancy*spiderPhaseFactor('ambient');
+  if(rnd()<simChance(rate*tempoDt())){
+    spawnEdgeSpider('contact');
+  }
+}
+function rememberEdgeSpider(s){
+  const p=s.lastPos||edgeSpiderPos(s);
+  if(!p)return false;
+  const prof=profile('spider','edge');
+  const rel=relShape((s.r||6)*.54,prof,T*.010+(s.phase||0),.70);
+  const dep=mem.add(p.x,p.y,(s.r||6)*.54,s.color||[220,230,255],'spider',rel,{locked:false,ghost:true,merge:true,terminal:true,hull:true,hullR:(s.r||6)*TERMINAL_HULL_RADIUS_FACTOR});
+  if(dep){s.finalRemembered=true;return true;}
+  return false;
+}
+function tickEdgeSpiders(){
+  maybeEdgeSpider();
+  const dt=tempoDt();if(dt<=0)return;
+  for(let i=edgeSpiders.length-1;i>=0;i--){
+    const s=edgeSpiders[i];
+    s.age+=dt;
+    // Zentrum bewegt sich entlang einer Kontaktkante, nicht frei im Raum.
+    // Das Lebensende ist jetzt ein Verblassen, kein hartes Abschalten.
+    const pathLen=edgeSpiderPathLength(s.link,s.curve);
+    if(!s.exiting){
+      s.u+=s.dir*((s.speedPx||1.8)/pathLen)*dt;
+      if(s.u<.16||s.u>.84){s.exiting=true;s.life=Math.min(s.life||0,(s.fadeOut||76)*1.05);}
+    }else{
+      // In der Ausblendphase noch minimal weitergleiten, aber nicht mehr aus der Kante schiessen.
+      s.u+=s.dir*((s.speedPx||1.8)/pathLen)*dt*.24;
+      s.u=clamp(s.u,.12,.88);
+    }
+    const pos=edgeSpiderPos(s);
+    if(pos){s.lastPos=pos;s.lostFrames=0;}else{s.lostFrames=(s.lostFrames||0)+dt;s.exiting=true;s.life=Math.min(s.life||0,(s.fadeOut||76));}
+    if(s.exiting){s.life-=.96*dt;}else{s.life-=.16*dt;}
+    // Verlorener Kontext fuehrt zum Ausblenden am letzten gueltigen Ort, nicht zum Verschwinden.
+    if(s.lostFrames>18)s.life-=.44*dt;
+    if(!s.finalRemembered&&s.life<=(s.fadeOut||76)*.34)rememberEdgeSpider(s);
+    if(!s.link||s.life<=0||!anchors[s.link.a]||!anchors[s.link.b]||s.link.a>=activeCount()||s.link.b>=activeCount()){
+      if(!s.finalRemembered)rememberEdgeSpider(s);
+      edgeSpiders.splice(i,1);
+    }
+  }
+}
+function drawEdgeSpider(c,s){
+  const cur=edgeSpiderPos(s);
+  if(cur){s.lastPos=cur;}
+  const p=cur||s.lastPos;if(!p)return;
+  const fade=clamp(Math.min(s.age/s.fadeIn,s.life/(s.fadeOut||76)),0,1);
+  if(fade<=.01)return;
+  const n=s.legs||12;
+  // Ein Umlauf der Laengenwelle in ca. einer halben Sekunde bei Normaltempo.
+  const wave=s.waveDir*(s.age*(Math.PI*2/30))+s.phase;
+  const selfSpin=(s.spinDir||1)*s.age*(s.spinRate||.024);
+  const orient=Math.atan2(p.ty,p.tx)+Math.PI*.5+s.phase*.08+selfSpin;
+  c.save();
+  c.lineCap='round';c.lineJoin='round';
+  const haloR=s.r*2.6;
+  const hg=c.createRadialGradient(p.x,p.y,0,p.x,p.y,haloR);
+  hg.addColorStop(0,rgba(s.color,.10*fade));
+  hg.addColorStop(.42,rgba(s.color,.040*fade));
+  hg.addColorStop(1,'rgba(0,0,0,0)');
+  c.beginPath();c.arc(p.x,p.y,haloR,0,Math.PI*2);c.fillStyle=hg;c.fill();
+  for(let i=0;i<n;i++){
+    const f=i/n;
+    const a=orient+f*Math.PI*2+Math.sin(i*1.71+s.phase)*.055;
+    const seq=.5+.5*Math.sin(wave-f*Math.PI*2);
+    const after=.5+.5*Math.sin(wave-f*Math.PI*2-.92);
+    const len=s.r*(.72+.92*seq+.20*after)*(i%3===0?1.16:1);
+    const inner=s.r*(.11+.06*Math.sin(wave+i));
+    const bend=(i%2?1:-1)*s.r*(.10+.10*after);
+    const sx=p.x+Math.cos(a)*inner,sy=p.y+Math.sin(a)*inner;
+    const ex=p.x+Math.cos(a)*len,ey=p.y+Math.sin(a)*len;
+    const qx=p.x+Math.cos(a)*len*.53+Math.cos(a+Math.PI*.5)*bend;
+    const qy=p.y+Math.sin(a)*len*.53+Math.sin(a+Math.PI*.5)*bend;
+    const al=fade*(.17+.38*seq);
+    c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(qx,qy,ex,ey);
+    c.strokeStyle=rgba(s.color,al*.78);c.lineWidth=.34+.42*seq;c.stroke();
+    if(seq>.62){
+      c.beginPath();c.moveTo(mix(sx,ex,.18),mix(sy,ey,.18));c.quadraticCurveTo(qx,qy,mix(sx,ex,.88),mix(sy,ey,.88));
+      c.strokeStyle=rgba([250,253,255],al*.45);c.lineWidth=.18+.16*seq;c.stroke();
+    }
+  }
+  // Kein Zentrumspunkt: nur ein schwacher Gelenkrest, damit die Beine nicht im Nichts beginnen.
+  c.beginPath();c.arc(p.x,p.y,Math.max(.55,s.r*.13),0,Math.PI*2);
+  c.fillStyle=rgba(lift(s.color,.10),.16*fade);c.fill();
+  c.restore();
+}
+function drawEdgeSpiders(c){
+  for(const s of edgeSpiders)drawEdgeSpider(c,s);
+}
+
+function runCap(){const raw=set.runlight>1.15?4:(set.runlight>.50?3:1);return simCap(raw,1);}
+function runFade(t){const edge=Math.min(t,1-t);return ease(clamp(edge/.16,0,1));}
+function startAnchorRun(a,b,reason){if(set.runlight<=.01||a===b)return;if(a==null||b==null||!anchors[a]||!anchors[b])return;if(T-lastRunT<simCooldown(Math.max(70,240/(set.runlight+.22))))return;if(runs.length>=runCap())return;let l=linkFor(a,b)||connectAnchors(a,b,'switch');if(!l)return;const A=anchors[l.a],B=anchors[l.b];if(!A||!B)return;const forward=l.a===a;const col=blend(A.color,B.color,.5);runs.push({link:l,p:forward?0:1,dir:forward?1:-1,speed:rr(.051,.087)*(reason==='switch'?1.10:1),color:glow(col,.22),tail:rr(.055,.120),curve:(rnd()<.46?0:rr(.12,.50)),turns:0,turnAt:forward?1:0,age:0});lastRunT=T;}
+function startNearestRun(x,y,color,reason){if(set.runlight<=.05||T-lastRunT<simCooldown(Math.max(80,275/(set.runlight+.18)))||runs.length>=runCap())return;let best=null,bd=1e9;for(const l of anchorLinks){const A=anchors[l.a],B=anchors[l.b];if(!A||!B||l.a>=activeCount()||l.b>=activeCount())continue;const m=qpos(A,{x:l.cpx,y:l.cpy},B,.5),dd=dist(x,y,m.x,m.y);if(dd<bd){bd=dd;best=l;}}if(!best||bd>Math.min(W,H)*.34)return;const A=anchors[best.a],B=anchors[best.b],toward=dist(x,y,A.x,A.y)>dist(x,y,B.x,B.y);runs.push({link:best,p:toward?0:1,dir:toward?1:-1,speed:rr(.048,.078),color:glow(blend(color,blend(A.color,B.color,.5),.48),.18),tail:rr(.052,.112),curve:(rnd()<.54?0:rr(.10,.44)),turns:0,turnAt:toward?1:0,age:0});lastRunT=T;}
+function maybeAmbientRun(){if(set.runlight<=.04||activeCount()<2||anchorLinks.length<1)return;if(runs.length>=runCap())return;if(T-lastRunT<simCooldown(Math.max(90,315/(set.runlight+.20))))return;if(rnd()>simChance(.02325*set.runlight*tempoDt()*contentActivityScale()))return;let links=anchorLinks.filter(l=>l.str>.015&&l.a<activeCount()&&l.b<activeCount());if(!links.length)return;let pool=links.filter(l=>l.a===focus.current||l.b===focus.current);if(!pool.length||rnd()<.22)pool=links;let l=pool[ri(pool.length)];if(pool.length>1&&rnd()<.42){let best=l,bs=-1;for(const cand of pool){const s=(anchorGravity(cand.a)+anchorGravity(cand.b))*.5+rnd(.45);if(s>bs){bs=s;best=cand;}}l=best;}let a=l.a,b=l.b;if(l.b===focus.current||rnd()<.18){a=l.b;b=l.a;}startAnchorRun(a,b,'ambient');}
+function drawRuns(){const c=ctx['c-fx'];c.clearRect(0,0,W,H);c.save();sceneTransform(c);drawFilaments(c);drawEdgeSpiders(c);for(let i=runs.length-1;i>=0;i--){const r=runs[i];{const dt=tempoDt();r.age+=dt;r.p+=r.dir*r.speed*dt;}if(r.p<-.025||r.p>1.025||r.age>76){runs.splice(i,1);continue;}const l=r.link,A=anchors[l.a],B=anchors[l.b];if(!A||!B){runs.splice(i,1);continue;}const C={x:l.cpx,y:l.cpy};const head=clamp(r.p,0,1),curve=clamp(r.curve==null?.54:r.curve,0,1);const fade=runFade(head);const runSize=1.20; /* Lauflicht-Durchmesser: 60% der bisherigen Groesse */for(let k=7;k>=0;k--){const off=k/7*r.tail;const t=clamp(head-r.dir*off,0,1);const tf=runFade(t);if(tf<=.01)continue;const rawP=runPos(A,C,B,t,curve),rb=insetVisibleBounds(.030,8);const p={x:clamp(rawP.x,rb.left,rb.right),y:clamp(rawP.y,rb.top,rb.bottom)};const al=(1-k/8)*(.26+.12*set.runlight)*tf*fade;const rad=(.86-k*.040)*(1+set.runlight*.06)*runSize;const col=glow(r.color,.34);const haloR=rad*(2.05+set.runlight*.24);const g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,haloR);g.addColorStop(0,rgba(glow(col,.55),al*.26));g.addColorStop(.42,rgba(col,al*.070));g.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(p.x,p.y,haloR,0,Math.PI*2);c.fillStyle=g;c.fill();}
+   if(fade>.01){const rawH=runPos(A,C,B,head,curve),hb=insetVisibleBounds(.030,10);const h={x:clamp(rawH.x,hb.left,hb.right),y:clamp(rawH.y,hb.top,hb.bottom)};const headR=(1.10+set.runlight*.22)*runSize;const headAuraR=headR*3.05;const hg=c.createRadialGradient(h.x,h.y,0,h.x,h.y,headAuraR);hg.addColorStop(0,rgba([250,253,255],.38*fade));hg.addColorStop(.30,rgba(glow(r.color,.70),.22*fade));hg.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(h.x,h.y,headAuraR,0,Math.PI*2);c.fillStyle=hg;c.fill();c.beginPath();c.arc(h.x,h.y,headR*.58,0,Math.PI*2);c.fillStyle=rgba([250,253,255],.76*fade);c.fill();}}c.restore();}
+function drawEdgeVignette(c){
+  const sx=W*.18,sy=H*.20,sideA=.20,vertA=.18;
+  let g;
+  g=c.createLinearGradient(0,0,sx,0);
+  g.addColorStop(0,'rgba(0,0,0,'+sideA+')');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;c.fillRect(0,0,sx,H);
+  g=c.createLinearGradient(W,0,W-sx,0);
+  g.addColorStop(0,'rgba(0,0,0,'+sideA+')');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;c.fillRect(W-sx,0,sx,H);
+  g=c.createLinearGradient(0,0,0,sy);
+  g.addColorStop(0,'rgba(0,0,0,'+vertA+')');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;c.fillRect(0,0,W,sy);
+  g=c.createLinearGradient(0,H,0,H-sy);
+  g.addColorStop(0,'rgba(0,0,0,'+vertA+')');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;c.fillRect(0,H-sy,W,sy);
+}
+function drawUI(){const c=ctx['c-ui'];if(!c)return;c.clearRect(0,0,W,H);drawEdgeVignette(c);if(set.show){c.save();sceneTransform(c);for(let i=0;i<activeCount();i++){const a=anchors[i],m=.035+a.activity*.092;const g=c.createRadialGradient(a.x,a.y,0,a.x,a.y,68);g.addColorStop(0,rgba(a.color,m+Math.min(.055,a.mass*.06)));g.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(a.x,a.y,68,0,Math.PI*2);c.fillStyle=g;c.fill();drawMembrane(c,a.x,a.y,8+a.mass*9,a.profile,a.color,.13+a.activity*.34,T*.002+a.age*.003);}c.restore();}}
+function resetScene(){T=0;frame=0;resetVariationSalt();refreshMotifLayout();R=mulberry32(hash(analysis.seed+'|'+layoutSalt+'|'+variationSalt));entities.length=0;mem.deposits.length=0;mem.connections.length=0;runs.length=0;filaments.length=0;edgeSpiders.length=0;edgeSpiderStimuli.length=0;edgeSpiderSites.length=0;anchors.length=0;anchorLinks.length=0;latent.clear();motifToAnchor.clear();lastAnchorT=-9999;lastSwitchT=-9999;lastRunT=-9999;lastEdgeSpiderT=-9999;lastSpiderStateT=-9999;lastImpulseT=-9999;lastSustainImpulseT=-9999;lastContinuityImpulseT=-9999;movingSlots.length=0;nextMotionSlotT=0;turnIndex=0;nextTurnT=55;chatPulse=null;const first=analysis.motifs[0];createAnchorFromMotif(first,0,0);for(let i=0;i<3;i++){const o=originFor(0,.75);entities.push(new Entity(o.x,o.y,i%2?'thought':'cool',0));}render();}
+// Laufzeit: alle turns verarbeitet + Ausklang, min 3min, max 5min
+const MIN_MS=180*1000;
+const MAX_MS=300*1000;
+const COOLDOWN_MS=15*1000;
+const SLOWDOWN_MS=1.2*1000;
+const STILL_MS=5*1000;
+const FADE_MS=10*1000;
+let allTurnsDoneAt=-1;
+let fadeState='running';
+let phaseStartMs=0;
+let runStartMs=0;
+let fadeAlpha=1.0;
+let fadeApplied=0.0;
+let tempoScale=1.0;
+function counterMix(a,b,t){t=clamp(t,0,1);return [Math.round(mix(a[0],b[0],t)),Math.round(mix(a[1],b[1],t)),Math.round(mix(a[2],b[2],t))];}
+function activeCounterStops(){return (analysis&&analysis.counterStops&&analysis.counterStops.length)?analysis.counterStops:COUNTER_STOPS_BASE;}
+function counterPhaseColor(p){
+  const stops=activeCounterStops();p=clamp(p,0,1);
+  for(let i=1;i<stops.length;i++){
+    const a=stops[i-1],b=stops[i];
+    if(p<=b.p){return counterMix(a.c,b.c,(p-a.p)/Math.max(.0001,b.p-a.p));}
+  }
+  return stops[stops.length-1].c.slice();
+}
+function counterDisplayColor(c){
+  c=temperedWhite(c);
+  const lum=.2126*c[0]+.7152*c[1]+.0722*c[2];
+  if(lum<92){c=blend(c,[190,202,255],clamp((92-lum)/92*.24,0,.24));}
+  return temperedWhite(c);
+}
+function counterRoundedRectPath(c,x,y,w,h,r){
+  r=Math.max(0,Math.min(r,w*.5,h*.5));
+  c.moveTo(x+r,y);
+  c.lineTo(x+w-r,y);
+  c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);
+  c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h);
+  c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r);
+  c.quadraticCurveTo(x,y,x+r,y);
+}
+function drawCounterCanvas(p){
+  const bar=document.getElementById('counter-bar');
+  const canvas=document.getElementById('counter-canvas');
+  if(!bar||!canvas)return null;
+  const rect=bar.getBoundingClientRect();
+  const w=Math.max(1,rect.width||72);
+  const h=Math.max(1,rect.height||7);
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  const cw=Math.max(1,Math.round(w*dpr));
+  const ch=Math.max(1,Math.round(h*dpr));
+  if(canvas.width!==cw)canvas.width=cw;
+  if(canvas.height!==ch)canvas.height=ch;
+  const c=canvas.getContext('2d');
+  if(!c)return null;
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,w,h);
+  const r=Math.min(4,h*.5);
+  c.beginPath();
+  counterRoundedRectPath(c,0,0,w,h,r);
+  c.fillStyle='rgba(210,220,255,.035)';
+  c.fill();
+  const fillW=clamp(p,0,1)*w;
+  if(fillW>.01){
+    c.save();
+    c.beginPath();
+    counterRoundedRectPath(c,0,0,w,h,r);
+    c.clip();
+    // Durchgehende Flaeche: keine innere DOM-Maske, kein gerundetes Zwischenende,
+    // keine CSS-Transition. Der rechte Fortschrittsrand bleibt bis 100% gerade.
+    c.fillStyle='rgba(210,220,255,.105)';
+    c.fillRect(0,0,fillW,h);
+    const g=c.createLinearGradient(0,0,w,0);
+    activeCounterStops().forEach(st=>{
+      const cc=counterDisplayColor(st.c);
+      const alpha=st.p>=.68&&st.p<.90?.86:.84;
+      g.addColorStop(clamp(st.p,0,1),'rgba('+Math.round(cc[0])+','+Math.round(cc[1])+','+Math.round(cc[2])+','+alpha+')');
+    });
+    c.fillStyle=g;
+    c.fillRect(0,0,fillW,h);
+    c.restore();
+  }
+  return {bar,w,h};
+}
+function setCounterProgress(p){
+  p=clamp(p,0,1);
+  const c=counterDisplayColor(counterPhaseColor(p));
+  const drawn=drawCounterCanvas(p);
+  if(drawn&&drawn.bar){
+    drawn.bar.style.boxShadow='0 0 7px rgba('+c[0]+','+c[1]+','+c[2]+',0.17)';
+  }
+}
+function fadeCurve(p){
+  p=clamp(p,0,1);
+  // Nichtlinearer, verzoegerter Fade: Der Anfang bleibt sehr sanft,
+  // erst spaeter nimmt die Abdunkelung merklich zu.
+  const s=p*p*(3-2*p);
+  return s*s;
+}
+function resetLifecycle(){fadeState='running';fadeAlpha=1.0;fadeApplied=0.0;tempoScale=1.0;frameDt=1.0;phaseStartMs=0;allTurnsDoneAt=-1;runStartMs=performance.now();setCounterProgress(0);}
+function checkLifecycle(){
+  const now=performance.now();
+  const elapsed=now-runStartMs;
+  const targetEnd=clamp((analysis&&analysis.targetRunMs)||MIN_MS,MIN_MS,MAX_MS);
+  if(allTurnsDoneAt<0&&turnIndex>=analysis.turns.length&&analysis.turns.length>0){allTurnsDoneAt=elapsed;}
+  const doneEnd=allTurnsDoneAt>0?allTurnsDoneAt+COOLDOWN_MS:Infinity;
+  const endAt=allTurnsDoneAt>0?Math.min(MAX_MS,Math.max(targetEnd,doneEnd)):MAX_MS;
+  if(fadeState==='running'){
+    let progress;
+    if(allTurnsDoneAt>0){
+      progress=elapsed/Math.max(1,endAt);
+    }else if(elapsed<targetEnd){
+      // Vor der Zielzeit reift der Balken sichtbar, bleibt aber noch offen.
+      progress=.88*(elapsed/Math.max(1,targetEnd));
+    }else{
+      // Dichte Texte, die noch nicht fertig gelesen sind, wachsen langsam weiter bis zur Maximalzeit.
+      progress=.88+.10*((elapsed-targetEnd)/Math.max(1,MAX_MS-targetEnd));
+    }
+    setCounterProgress(progress);
+  }
+  const reachedNaturalEnd=allTurnsDoneAt>=0&&elapsed>=endAt;
+  const reachedHardEnd=elapsed>=MAX_MS;
+  if(fadeState==='running'&&(reachedNaturalEnd||reachedHardEnd)){fadeState='slowdown';phaseStartMs=now;tempoScale=1.0;setCounterProgress(1);}
+  else if(fadeState==='slowdown'){const p=(now-phaseStartMs)/SLOWDOWN_MS;tempoScale=clamp(1-p,0,1);if(p>=1){fadeState='still';phaseStartMs=now;tempoScale=0;}}
+  else if(fadeState==='still'&&now-phaseStartMs>=STILL_MS){fadeState='fading';phaseStartMs=now;fadeAlpha=1.0;fadeApplied=0.0;}
+  else if(fadeState==='fading'){const p=(now-phaseStartMs)/FADE_MS;const target=fadeCurve(p);fadeAlpha=clamp(1-target,0,1);if(p>=1){fadeAlpha=0;fadeState='restarting';}}
+  else if(fadeState==='restarting'){restartAfterCompletion();}}
+function applyFade(){
+  const target=clamp(1-fadeAlpha,0,1);
+  if(target<=fadeApplied+.0001)return;
+  // Die Canvas-Inhalte werden nicht neu aufgebaut; deshalb muss hier nur
+  // die Differenz zur bereits erreichten Abdunkelung gezeichnet werden.
+  // So entspricht die sichtbare Gesamtabdunkelung der nichtlinearen Kurve
+  // und startet nicht abrupt durch kumulierte lineare Ueberlagerungen.
+  const alpha=clamp((target-fadeApplied)/Math.max(.001,1-fadeApplied),0,1);
+  fadeApplied=target;
+  for(const id of ids){const c=ctx[id];if(!c)continue;c.save();c.globalCompositeOperation='source-over';c.fillStyle='rgba(0,0,0,'+alpha+')';c.fillRect(0,0,W,H);c.restore();}
+}
+function step(){if(fadeState==='still'||fadeState==='fading'||fadeState==='restarting')return;frameDt=clamp(tempoScale,0,1);if(frameDt<=0)return;T+=frameDt;maybeTurnImpulse();maybeContinuityImpulse();maybeSustainImpulse();tickAnchors();maybeSpawn();for(let i=entities.length-1;i>=0;i--){const e=entities[i];if(e.deadFlag){if(!e.finalRemembered||!e.finalHullRemembered)e.archive(false,true,true);entities.splice(i,1);continue;}e.tick();if(e.dead()){if(!e.finalRemembered||!e.finalHullRemembered)e.archive(false,true,true);entities.splice(i,1);}}handleInteractions();tickFilaments();tickEdgeSpiders();mem.tick();maybeAmbientRun();}
+function render(){if(fadeState==='running'||fadeState==='slowdown'){const live=ctx['c-live'];live.clearRect(0,0,W,H);live.save();sceneTransform(live);for(const e of entities)e.draw();live.restore();mem.draw();drawRuns();}if(frame%5===0&&fadeState!=='fading')drawUI();applyFade();if(frame%30===0){document.getElementById('t').innerHTML='t = '+Math.round(T)+'<br>'+(analysis.demo?'demo':'chat')+' / z = '+activeCount();}}
+function loop(){frame++;checkLifecycle();step();render();requestAnimationFrame(loop);}
+const CONTROL_DEFAULTS={density:4,tempo:4,memory:5,maxCenters:6,birth:5,network:6,fusion:4,spannung:5,attraction:6};
+const CONTROL_IDS=['density','tempo','memory','maxCenters','birth','network','fusion','attraction'];
+const CONTROL_MAP={
+  density: v=>0.50+v/10*1.05,        // 0.50–1.55
+  tempo:   v=>0.60+v/10*0.90,        // 0.60–1.50
+  memory:  v=>{const x=v/10;if(x<=.5){const t=x/.5;return .125+Math.pow(t,1.35)*(1.25-.125);}const t=(x-.5)/.5;return 1.25+Math.pow(t,.85)*(1.80-1.25);}, // 0.125-1.80; 5 bleibt 1.25
+  network: v=>0.45+v/10*1.30,        // 0.45–1.75
+  fusion:  v=>Math.pow(v/10,1.15)*2.00, // 0.00–2.00; unten fast aus, oben deutlich sichtbarer
+  maxCenters: v=>Math.max(1,Math.round(v)), // 1-10, zahlentreu
+  birth: v=>0.40+v/10*1.60,       // 0.40-2.00
+  attraction: v=>0.002+Math.pow(v/10,1.10)*3.150 // 0.002-3.152; 0 = minimale Bewegung
+};
+function setControlValue(id,value){
+  const inp=document.getElementById(id),out=document.getElementById(id+'V');
+  const def=CONTROL_DEFAULTS[id]==null?0:CONTROL_DEFAULTS[id];
+  let n=Number(value);if(!Number.isFinite(n))n=def;
+  const min=id==='maxCenters'?1:0,max=10;n=clamp(Math.round(n),min,max);
+  if(inp)inp.value=String(n);if(out)out.textContent=String(n);
+  if(id==='spannung'){
+    const v=n/10;
+    set.focus=0.62+v*1.00;
+    set.side=0.03+Math.pow(v,1.2)*0.185;
+    set.switchRate=0.24+v*1.40;
+    return;
+  }
+  if(CONTROL_MAP[id]){
+    set[id]=CONTROL_MAP[id](n);
+    if(id==='maxCenters'&&focus.current>=set.maxCenters)switchTo(Math.max(0,set.maxCenters-1),'limit');
+  }
+}
+function applyControlProfile(profile){
+  profile=profile||CONTROL_DEFAULTS;
+  for(const id of CONTROL_IDS)setControlValue(id,profile[id]==null?CONTROL_DEFAULTS[id]:profile[id]);
+  setControlValue('spannung',profile.spannung==null?CONTROL_DEFAULTS.spannung:profile.spannung);
+}
+function relationProfileStats(a){
+  const r=a&&a.relations,n=a&&a.motifs?Math.min(a.motifs.length,r?r.length:0):0;
+  let sum=0,count=0,strong=0;
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const v=clamp((r[i]&&r[i][j])||0,0,1);sum+=v;count++;if(v>.24)strong++;
+  }
+  return {avg:count?sum/count:0,strong:count?strong/count:0};
+}
+function deriveTextControlProfile(a){
+  if(!a||a.demo)return {...CONTROL_DEFAULTS};
+  const motifs=a.motifs||[],turns=a.turns||[],n=motifs.length;
+  const motifScore=clamp((n-1)/11,0,1);
+  const rawMotifScore=clamp(((a.rawMotifCount||n)-1)/18,0,1);
+  const substance=clamp(a.substance==null?1:a.substance,0,1);
+  const runScope=clamp(a.runScope==null?0.5:a.runScope,0,1);
+  const turnScore=clamp(turns.length/28,0,1);
+  const tokenScore=clamp((a.tokenCount||0)/520,0,1);
+  const repeatNorm=clamp((a.repeatCount||motifs.filter(m=>(m.freq||1)>1).length)/Math.max(1,Math.min(10,(a.rawMotifCount||n)||1)),0,1);
+  const spanAvg=motifs.length?motifs.reduce((s,m)=>s+clamp(m.span||0,0,1),0)/motifs.length:0;
+  const rel=relationProfileStats(a);
+  const relNorm=clamp(rel.avg/.32,0,1);
+  const strongRel=clamp(rel.strong/.30,0,1);
+  const avgImpulse=clamp(a.avgImpulse==null?(turns.reduce((s,t)=>s+(t.intensity||0),0)/Math.max(1,turns.length)):a.avgImpulse,0,1.15)/1.15;
+  const qc=turns.filter(t=>t.cat==='question'||t.cat==='critique').length;
+  const qCrit=clamp(qc/Math.max(1,turns.length),0,1);
+  const punct=clamp((a.punctuationCount||0)/8,0,1);
+  const intensities=turns.map(t=>t.intensity||0);
+  const mean=intensities.length?intensities.reduce((s,v)=>s+v,0)/intensities.length:0;
+  const variance=intensities.length?intensities.reduce((s,v)=>s+(v-mean)*(v-mean),0)/intensities.length:0;
+  const impulseVar=clamp(Math.sqrt(variance)/.32,0,1);
+  // Zentren: Top-Motivzahl saettigt nicht mehr allein; Umfang, Laufzeit und Turnstruktur staffeln kurz/mittel/lang staerker.
+  const centers=clamp(2.55+motifScore*2.75+substance*1.15+repeatNorm*.45+rawMotifScore*.30+runScope*1.15+tokenScore*.55+turnScore*1.05-(relNorm>.78?.55:0),1,10);
+  const density=clamp(2.0+substance*2.45+avgImpulse*.85+turnScore*.55+tokenScore*.35-(a.thinInput?.65:0),1,7);
+  const tempo=clamp(4+(avgImpulse-.58)*.9+(turnScore-.45)*.45-(a.thinInput?.45:0),3,5);
+  const memory=clamp(3.5+repeatNorm*1.8+spanAvg*1.55+substance*.85+runScope*.55-(a.fragmentInput?.55:0),3,8);
+  const birth=clamp(2.3+substance*2.75+runScope*1.25+avgImpulse*.75+motifScore*.45-(a.fragmentInput?.75:0),2,8);
+  const network=clamp(2.4+relNorm*2.7+strongRel*.95+motifScore*.95+substance*.75,2,8);
+  const cohesion=clamp(relNorm*.62+strongRel*.38,0,1);
+  const fusion=clamp(2.0+cohesion*2.55+repeatNorm*.55+(1-motifScore)*relNorm*.75-motifScore*.40-(qCrit>.28?.35:0),1,6);
+  const spannung=clamp(3.5+qCrit*2.85+punct*1.15+impulseVar*1.15+avgImpulse*.50,2,8);
+  const attraction=clamp(3.8+relNorm*1.55+strongRel*.80+repeatNorm*.75+substance*.65-(motifScore>.78?.35:0),3,8);
+  return {
+    density:Math.round(density),
+    tempo:Math.round(tempo),
+    memory:Math.round(memory),
+    maxCenters:Math.round(centers),
+    birth:Math.round(birth),
+    network:Math.round(network),
+    fusion:Math.round(fusion),
+    spannung:Math.round(spannung),
+    attraction:Math.round(attraction)
+  };
+}
+function applyText(txt){
+  const hasText=!!(txt||'').trim();
+  analysis=analyseText(txt,!hasText);
+  seed=analysis.seed;
+  applyControlProfile(hasText?deriveTextControlProfile(analysis):CONTROL_DEFAULTS);
+  updateTopologySalt();
+  resetLifecycle();
+  updateStatus();
+  resetScene();
+}
+function restartAfterCompletion(){
+  const chatEl=document.getElementById('chat');
+  if(analysis&&!analysis.demo){
+    if(chatEl)chatEl.value='';
+    applyText('');
+  }else{
+    applyText(chatEl?chatEl.value:'');
+  }
+}
+function wire(){
+document.getElementById('toggle').onclick=()=>document.getElementById('panel').classList.toggle('open');
+const langDE=document.getElementById('langDE');if(langDE)langDE.addEventListener('click',()=>window.setLang('de'));
+const langEN=document.getElementById('langEN');if(langEN)langEN.addEventListener('click',()=>window.setLang('en'));
+// Mapping: 0-10 -> interner Wertebereich
+const ids=CONTROL_IDS;
+for(const id of ids){
+  const inp=document.getElementById(id);
+  inp.oninput=()=>setControlValue(id,inp.value);
+}
+// Spannung: 0-10 -> focus, side, switchRate
+const spInp=document.getElementById('spannung');
+spInp.oninput=()=>setControlValue('spannung',spInp.value);
+document.getElementById('show').onchange=e=>{set.show=e.target.checked;drawUI();};
+document.getElementById('analyse').onclick=()=>applyText(document.getElementById('chat').value);
+document.getElementById('demo').onclick=()=>{document.getElementById('chat').value='';applyText('');};
+document.getElementById('reset').onclick=()=>{resetLifecycle();updateStatus();resetScene();};
+for(const id of ids)document.getElementById(id).oninput();
+spInp.oninput();
+}
+updateTopologySalt();refreshMotifLayout();wire();updateStatus();resetLifecycle();resetScene();const params=new URLSearchParams(location.search);if(params.get('debug')==='1'){const td=document.getElementById('t');if(td)td.style.display='';}const target=parseInt(params.get('t')||'0',10);if(target>0){while(T<target)step();render();window.__done=true;}else{requestAnimationFrame(loop);}
+const creditBtn=document.getElementById('creditBtn');if(creditBtn)creditBtn.addEventListener('click',()=>{const ov=_getOverlay();if(!ov)return;const de=ov.querySelector('.overlay-de');const en=ov.querySelector('.overlay-en');if(de)de.style.display=currentLang==='de'?'':'none';if(en)en.style.display=currentLang==='en'?'':'none';ov.style.display='block';});
+})();
+</script>
+</body>
+</html>
