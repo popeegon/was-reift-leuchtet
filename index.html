@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 100
+     Version 101
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -24,7 +24,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 #t{position:absolute;z-index:5;top:18px;right:22px;font-family:"Courier New",monospace;font-size:8px;color:rgba(230,235,255,.055);letter-spacing:.1em;pointer-events:none;text-align:right;line-height:1.45}
 #toggle{position:absolute;z-index:20;left:14px;top:14px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(210,220,255,.14);background:rgba(0,0,0,.22);color:rgba(210,220,255,.38);font:18px/20px Georgia,serif;cursor:pointer}
 #panel{position:absolute;z-index:19;left:14px;top:46px;width:312px;max-height:calc(100vh - 64px);overflow:auto;padding:13px;border:1px solid rgba(125,145,220,.14);border-radius:12px;background:rgba(2,4,12,.78);backdrop-filter:blur(8px);display:none;color:rgba(224,230,255,.66);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px}
-#panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
+#panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left;transition:color .25s}.credit:hover{color:rgba(230,205,120,.92)}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
 .langFlag{display:inline-block;text-shadow:-1px 0 0 rgba(210,220,255,.2),1px 0 0 rgba(210,220,255,.2),0 -1px 0 rgba(210,220,255,.2),0 1px 0 rgba(210,220,255,.2),-1px -1px 0 rgba(210,220,255,.2),1px -1px 0 rgba(210,220,255,.2),-1px 1px 0 rgba(210,220,255,.2),1px 1px 0 rgba(210,220,255,.2)}
 </style>
 </head>
@@ -98,7 +98,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
     <button type="button" id="langDE" title="Deutsch" style="background:none;border:1px solid rgba(210,220,255,.2);border-radius:4px;cursor:pointer;font-size:26px;opacity:1;padding:1px 4px;line-height:1;"><span class="langFlag">&#x1F1E9;&#x1F1EA;</span></button>
     <button type="button" id="langEN" title="English" style="background:none;border:1px solid rgba(210,220,255,.2);border-radius:4px;cursor:pointer;font-size:26px;opacity:0.35;padding:1px 4px;line-height:1;"><span class="langFlag">&#x1F1EC;&#x1F1E7;</span></button>
   </div>
-  <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet. — Created by E. R. A. Hiller, 2026</div>
+  <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet — Created by E. R. A. Hiller, 2026</div>
 </div>
 
 <template id="overlayTemplate">
@@ -207,14 +207,14 @@ const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
     analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
-    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet. — Created by E. R. A. Hiller, 2026',creditTitle:'Erläuterung',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — Created by E. R. A. Hiller, 2026',creditTitle:'Erläuterung',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
     legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
     screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
-    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams. — Created by E. R. A. Hiller, 2026',creditTitle:'Explanation',
+    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — Created by E. R. A. Hiller, 2026',creditTitle:'Explanation',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
     legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively'}
