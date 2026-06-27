@@ -100,7 +100,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   </div>
   <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet — Created by E. R. A. Hiller, 2026</div>
   <div style="border-top:1px solid rgba(210,185,120,.25);margin:6px auto 0;width:60%;"></div>
-  <div style="font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;text-align:center;margin-top:5px;">Selected by Async Museum</div>
+  <div style="font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;text-align:center;margin-top:5px;" id="selectedByLine"></div>
 </div>
 
 <template id="overlayTemplate">
@@ -209,14 +209,14 @@ const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
     analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
-    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — Created by E. R. A. Hiller, 2026',creditTitle:'Erläuterung',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
     legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
     screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
-    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — Created by E. R. A. Hiller, 2026',creditTitle:'Explanation',
+    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
     legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively'}
@@ -257,6 +257,7 @@ window.setLang=function setLang(lang){
   ['legendTitle','legendBtn','legendSemLabel','legendSemL','legendSemR','legendOpenLabel','legendDenseLabel','legendReiLabel','legendReiL','legendReiR','legendGewLabel','legendGewL','legendGewR','legendDynLabel','legendDynL','legendDynR'].forEach(k=>{if(S[k])text(k,S[k]);});
   text('creditBtn',S.credit);
   prop('creditBtn','title',S.creditTitle);
+  text('selectedByLine',S.selectedBy);
   ['Density','Tempo','Memory','MaxCenters','Birth','Network','Fusion','Spannung','Attraction','Depth'].forEach(k=>text('label'+k,S['label'+k]));
   if(_overlayEl){
     const de=_overlayEl.querySelector('.overlay-de');
@@ -2604,6 +2605,7 @@ function wire(){
 document.getElementById('toggle').onclick=()=>document.getElementById('panel').classList.toggle('open');
 const langDE=document.getElementById('langDE');if(langDE)langDE.addEventListener('click',()=>window.setLang('de'));
 const langEN=document.getElementById('langEN');if(langEN)langEN.addEventListener('click',()=>window.setLang('en'));
+window.setLang(currentLang);
 // Mapping: 0-10 -> interner Wertebereich
 const ids=CONTROL_IDS;
 for(const id of ids){
