@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 102
+     Version 103
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -24,7 +24,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 #t{position:absolute;z-index:5;top:18px;right:22px;font-family:"Courier New",monospace;font-size:8px;color:rgba(230,235,255,.055);letter-spacing:.1em;pointer-events:none;text-align:right;line-height:1.45}
 #toggle{position:absolute;z-index:20;left:14px;top:14px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(210,220,255,.14);background:rgba(0,0,0,.22);color:rgba(210,220,255,.38);font:18px/20px Georgia,serif;cursor:pointer}
 #panel{position:absolute;z-index:19;left:14px;top:46px;width:312px;max-height:calc(100vh - 64px);overflow:auto;padding:13px;border:1px solid rgba(125,145,220,.14);border-radius:12px;background:rgba(2,4,12,.78);backdrop-filter:blur(8px);display:none;color:rgba(224,230,255,.66);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px}
-#panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left;transition:color .25s}.credit:hover{color:rgba(230,205,120,.92)}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
+#panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left;transition:color .25s}.credit:hover{color:rgba(230,205,120,.92)}.async-link{color:rgba(210,185,120,.62);font-style:italic;text-decoration:none;transition:color .25s}.async-link:visited{color:rgba(210,185,120,.62)}.async-link:hover{color:rgba(230,205,120,.92)}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
 .langFlag{display:inline-block;text-shadow:-1px 0 0 rgba(210,220,255,.2),1px 0 0 rgba(210,220,255,.2),0 -1px 0 rgba(210,220,255,.2),0 1px 0 rgba(210,220,255,.2),-1px -1px 0 rgba(210,220,255,.2),1px -1px 0 rgba(210,220,255,.2),-1px 1px 0 rgba(210,220,255,.2),1px 1px 0 rgba(210,220,255,.2)}
 </style>
 </head>
@@ -100,7 +100,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   </div>
   <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet — Created by E. R. A. Hiller, 2026</div>
   <div style="border-top:1px solid rgba(210,185,120,.25);margin:6px auto 0;width:60%;"></div>
-  <div style="font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;text-align:center;margin-top:5px;" id="selectedByLine"></div>
+  <a href="https://asyncmuseum.com/works/what-ripens-gleams" target="_blank" rel="noopener" class="async-link" id="selectedByLine" style="display:block;font-size:10px;line-height:1.35;text-align:center;margin-top:5px;"></a>
+  <a href="mailto:hiller.eugen@gmail.com" class="async-link" style="display:block;font-size:15px;line-height:1;text-align:center;margin-top:10px;font-style:normal;text-decoration:none;">@</a>
 </div>
 
 <template id="overlayTemplate">
