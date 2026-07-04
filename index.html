@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 103
+     Version 106
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -35,7 +35,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 <button id="toggle" style="width:auto;min-width:72px;padding:0 10px;font-size:10px;letter-spacing:.12em;font-style:normal;color:#ffffff;border-radius:8px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Eingabe</button>
 <!-- Legende -->
 <button id="legendToggle" style="position:absolute;z-index:20;right:14px;bottom:14px;width:80px;height:24px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(0,0,0,.22);color:#ffffff;font-size:10px;letter-spacing:.12em;font-style:normal;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;"><span id="legendBtn">Legende</span></button>
-<div id="legendPanel" style="display:none;position:absolute;z-index:20;right:14px;bottom:46px;width:286px;height:184px;background:rgba(2,4,12,.78);border:1px solid rgba(125,145,220,.14);border-radius:12px;padding:0;overflow:hidden;backdrop-filter:blur(8px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:rgba(224,230,255,.66);font-size:9px;line-height:1;white-space:nowrap;">
+<div id="legendPanel" style="display:none;position:absolute;z-index:20;right:14px;bottom:46px;width:286px;height:209px;background:rgba(2,4,12,.78);border:1px solid rgba(125,145,220,.14);border-radius:12px;padding:0;overflow:hidden;backdrop-filter:blur(8px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:rgba(224,230,255,.66);font-size:9px;line-height:1;white-space:nowrap;">
   <div id="legendTitle" style="position:absolute;left:17px;top:15px;font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;">Basislegende</div>
 
   <span id="legendSemLabel" style="position:absolute;left:17px;top:58px;letter-spacing:.04em;">Sujetlage</span>
@@ -72,6 +72,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 106</div>
 </div>
 <div id="panel">
   <div id="screenHint" style="font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:0 0 4px;">Entfaltet sich am besten auf größeren Bildschirmen.</div>
@@ -205,6 +206,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 <script>
 (function(){
 'use strict';
+// Versionsnummer wird aus dem Header-Kommentar gelesen (einzige Quelle,
+// von Hand gepflegt). Rückfallwert greift nur, falls das Auslesen
+// scheitert (z.B. geänderte Kommentarformatierung).
+const VERSION=(function(){
+  for(const n of document.childNodes){
+    if(n.nodeType===8){
+      const m=/Version\s+(\d+)/.exec(n.textContent);
+      if(m)return m[1];
+    }
+  }
+  return '105';
+})();
 let currentLang='de';
 const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
@@ -212,7 +225,7 @@ const STRINGS={
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
     showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
-    legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',
+    legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',legendVersion:'Version '+VERSION,
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
@@ -220,7 +233,7 @@ const STRINGS={
     showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
-    legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively'}
+    legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively',legendVersion:'Version '+VERSION}
 };
 let _overlayEl=null;
 function _getOverlay(){
@@ -255,7 +268,7 @@ window.setLang=function setLang(lang){
   text('demo',S.demo);
   text('reset',S.reset);
   text('showLabel',S.showLabel);text('parallaxLabel',S.parallaxLabel);
-  ['legendTitle','legendBtn','legendSemLabel','legendSemL','legendSemR','legendOpenLabel','legendDenseLabel','legendReiLabel','legendReiL','legendReiR','legendGewLabel','legendGewL','legendGewR','legendDynLabel','legendDynL','legendDynR'].forEach(k=>{if(S[k])text(k,S[k]);});
+  ['legendTitle','legendBtn','legendSemLabel','legendSemL','legendSemR','legendOpenLabel','legendDenseLabel','legendReiLabel','legendReiL','legendReiR','legendGewLabel','legendGewL','legendGewR','legendDynLabel','legendDynL','legendDynR','legendVersion'].forEach(k=>{if(S[k])text(k,S[k]);});
   text('creditBtn',S.credit);
   prop('creditBtn','title',S.creditTitle);
   text('selectedByLine',S.selectedBy);
@@ -597,15 +610,49 @@ function buildCounterStops(entries,turns,segDominant,substance,demo){
   // Dadurch wirken sehr kurze Texte nicht so, als haetten sie eine volle Reifung durchlaufen.
   const maturity=demo?1:ease(clamp((s-.20)/.58,0,1));
   const textStrength=(demo?.16:.46)*maturity;
-  return COUNTER_STOPS_BASE.map(st=>{
-    const quiet=quietPhaseColor(st.p);
+  // ── Verlaufsableitung: WANN der Reife-Hoehepunkt kommt ──────────────
+  // Das Farbvokabular (Blau-Violett-Gold-Weiss-Blau) und seine Reihenfolge
+  // bleiben fix - der Wiedererkennungswert liegt im Code, nicht in der
+  // festen Choreographie. Abgeleitet werden nur die POSITIONEN der drei
+  // inneren Stops. Signal ist dieselbe Turn-Intensitaet, die auch die
+  // Animation treibt, plus Motiv-Salienz: keine Deutung, nur die Verteilung
+  // der Verdichtung ueber den Textverlauf. Wo der Text kulminiert, liegt Gold.
+  function densityAt(pos){
+    let acc=0;
+    for(const t of turns||[]){const tp=(t.pos==null?0.5:t.pos),d=tp-pos;acc+=Math.exp(-(d*d)/(2*0.10*0.10))*(t.intensity||.4);}
+    for(const m of entries||[]){const mp=(m.pos==null?0.5:m.pos),d=mp-pos;acc+=Math.exp(-(d*d)/(2*0.13*0.13))*(0.35+(m.score||.3)*.5);}
+    return acc;
+  }
+  const N=41;let peakP=0.5,peakV=0,meanV=0,total=0;const cum=[];
+  for(let i=0;i<N;i++){const pos=i/(N-1),v=densityAt(pos);if(v>peakV){peakV=v;peakP=pos;}meanV+=v;total+=v;cum.push(total);}
+  meanV/=N;
+  // Peakedness: wie ausgepraegt der Hoehepunkt gegen den Durchschnitt ist.
+  // Ohne echten Hoehepunkt bleibt der Bogen bei den kanonischen Positionen -
+  // die Verschiebung wird durch eine tatsaechliche Verdichtung im Text verdient.
+  const peakedness=peakV>0?clamp((peakV-meanV)/peakV,0,1):0;
+  // Onset: wo die Verdichtung ~28% ihrer Gesamtmasse erreicht (Rampenbeginn).
+  let onsetP=0.30;const thresh=total*0.28;
+  for(let i=0;i<N;i++){if(cum[i]>=thresh){onsetP=i/(N-1);break;}}
+  // Vertrauen in die abgeleitete Position: verdient durch Substanz UND Hoehepunkt.
+  const trust=maturity*clamp(peakedness*1.6,0,1);
+  let goldP=mix(0.70,clamp(peakP,0.40,0.88),trust);
+  let violetP=mix(0.30,clamp(onsetP,0.12,0.88),trust);
+  let whiteP=mix(0.88,clamp(goldP+0.16,0.46,0.965),trust);
+  // Strikte Ordnung erzwingen (0 < violet < gold < white < 1):
+  goldP=clamp(goldP,0.34,0.90);
+  violetP=clamp(violetP,0.10,goldP-0.06);
+  whiteP=clamp(whiteP,goldP+0.06,0.965);
+  const derivedP=[0.00,violetP,goldP,whiteP,1.00];
+  return COUNTER_STOPS_BASE.map((st,i)=>{
+    const p=derivedP[i];
+    const quiet=quietPhaseColor(p);
     const base=blend(quiet,st.c,maturity);
-    const txt=phaseTextColor(st.p);
+    const txt=phaseTextColor(p);
     // Der Schluss bleibt eher kuehl: Textfarbe wirkt dort etwas leiser.
-    const w=st.p>.92?textStrength*.55:st.p>.86?textStrength*.72:textStrength;
+    const w=p>.92?textStrength*.55:p>.86?textStrength*.72:textStrength;
     const sat=1.02+.16*maturity;
     const c=saturate(blend(base,txt,w),sat);
-    return {p:st.p,c:temperedWhite(c)};
+    return {p,c:temperedWhite(c)};
   });
 }
 function normalizeText(s){return (s||'').toLowerCase().replace(/[ä]/g,'ae').replace(/[ö]/g,'oe').replace(/[ü]/g,'ue').replace(/[ß]/g,'ss');}
@@ -2604,6 +2651,14 @@ function restartAfterCompletion(){
 }
 function wire(){
 document.getElementById('toggle').onclick=()=>document.getElementById('panel').classList.toggle('open');
+// Klick ausserhalb des Eingabepanels schliesst es (zusaetzlich zum Toggle).
+// Der Toggle-Button bleibt ausgenommen: seine eigene Umschaltung bleibt allein zustaendig.
+document.addEventListener('pointerdown',e=>{
+  const panel=document.getElementById('panel');
+  if(!panel||!panel.classList.contains('open'))return;
+  if(e.target&&e.target.closest&&e.target.closest('#panel,#toggle'))return;
+  panel.classList.remove('open');
+});
 const langDE=document.getElementById('langDE');if(langDE)langDE.addEventListener('click',()=>window.setLang('de'));
 const langEN=document.getElementById('langEN');if(langEN)langEN.addEventListener('click',()=>window.setLang('en'));
 window.setLang(currentLang);
@@ -2636,7 +2691,7 @@ document.getElementById('parallaxOn').onchange=e=>{
 {const dr=document.getElementById('depthRow');if(dr)dr.style.display=set.parallaxOn?'':'none';}
 document.getElementById('analyse').onclick=()=>applyText(document.getElementById('chat').value);
 document.getElementById('demo').onclick=()=>{document.getElementById('chat').value='';applyText('');};
-document.getElementById('reset').onclick=()=>{resetLifecycle();updateStatus();resetScene();};
+document.getElementById('reset').onclick=()=>{applyControlProfile(analysis&&!analysis.demo?deriveTextControlProfile(analysis):CONTROL_DEFAULTS);resetLifecycle();updateStatus();resetScene();};
 for(const id of ids){const el=document.getElementById(id);if(el)el.oninput();}
 spInp.oninput();
 }
