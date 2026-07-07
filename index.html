@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 106
+     Version 107
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -72,7 +72,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
-  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 106</div>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 107</div>
 </div>
 <div id="panel">
   <div id="screenHint" style="font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:0 0 4px;">Entfaltet sich am besten auf größeren Bildschirmen.</div>
@@ -2528,6 +2528,19 @@ for(const e of sorted)e.draw();
 mem.draw();drawRuns();}if(frame%5===0&&fadeState!=='fading')drawUI();applyFade();if(frame%30===0){document.getElementById('t').innerHTML='t = '+Math.round(T)+'<br>'+(analysis.demo?'demo':'chat')+' / z = '+activeCount();}}
 function loop(){frame++;checkLifecycle();step();render();if(set.parallaxOn&&(parallaxDirty||Math.abs(parallaxTargetDX-parallaxDX)>.55||Math.abs(parallaxTargetDY-parallaxDY)>.55)){parallaxDirty=false;applyParallax(false);}requestAnimationFrame(loop);}
 const CONTROL_DEFAULTS={density:4,tempo:4,memory:5,maxCenters:6,birth:5,network:6,fusion:4,spannung:5,attraction:6,depth:5};
+// Demo-Reglerprofil: leichte, bei jedem Eintritt neu gewuerfelte Streuung um
+// CONTROL_DEFAULTS (+/-1, an den Raendern 0-10 begrenzt). Bewusst nicht an
+// einen Seed gebunden - Demo hat keinen Text, dem die Werte treu bleiben
+// muessten. Betrifft ausschliesslich den Demo-Zweig von applyText(); die
+// textabhaengige Determinismus-Garantie (deriveTextControlProfile) bleibt
+// davon unberuehrt.
+function jitteredDemoProfile(){
+  const p={};
+  for(const k in CONTROL_DEFAULTS){
+    p[k]=clamp(Math.round(CONTROL_DEFAULTS[k]+(Math.random()*2-1)),0,10);
+  }
+  return p;
+}
 const CONTROL_IDS=['density','tempo','memory','maxCenters','birth','network','fusion','attraction','depth'];
 const CONTROL_MAP={
   density: v=>0.50+v/10*1.05,
@@ -2633,7 +2646,8 @@ function applyText(txt){
   const hasText=!!(txt||'').trim();
   analysis=analyseText(txt,!hasText);
   seed=analysis.seed;
-  applyControlProfile(hasText?deriveTextControlProfile(analysis):CONTROL_DEFAULTS);
+  if(!hasText)analysis.demoControlProfile=jitteredDemoProfile();
+  applyControlProfile(hasText?deriveTextControlProfile(analysis):analysis.demoControlProfile);
   if(set.parallaxOn)resize();else scheduleParallax(true);
   updateTopologySalt();
   resetLifecycle();
@@ -2691,7 +2705,7 @@ document.getElementById('parallaxOn').onchange=e=>{
 {const dr=document.getElementById('depthRow');if(dr)dr.style.display=set.parallaxOn?'':'none';}
 document.getElementById('analyse').onclick=()=>applyText(document.getElementById('chat').value);
 document.getElementById('demo').onclick=()=>{document.getElementById('chat').value='';applyText('');};
-document.getElementById('reset').onclick=()=>{applyControlProfile(analysis&&!analysis.demo?deriveTextControlProfile(analysis):CONTROL_DEFAULTS);resetLifecycle();updateStatus();resetScene();};
+document.getElementById('reset').onclick=()=>{applyControlProfile(analysis&&!analysis.demo?deriveTextControlProfile(analysis):(analysis&&analysis.demoControlProfile?analysis.demoControlProfile:jitteredDemoProfile()));resetLifecycle();updateStatus();resetScene();};
 for(const id of ids){const el=document.getElementById(id);if(el)el.oninput();}
 spInp.oninput();
 }
