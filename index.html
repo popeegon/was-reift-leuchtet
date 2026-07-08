@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 107
+     Version 108
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -72,7 +72,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
-  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 107</div>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 108</div>
 </div>
 <div id="panel">
   <div id="screenHint" style="font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:0 0 4px;">Entfaltet sich am besten auf größeren Bildschirmen.</div>
@@ -520,8 +520,69 @@ function containEntity(e,hard){
   if(e.y!==oy){if((oy<b.top&&e.vy<0)||(oy>b.bottom&&e.vy>0))e.vy=0;else e.vy*=hard?0.20:0.42;}
 }
 function keepLinkControlInFrame(x,y,pad){const b=insetVisibleBounds(.030,pad==null?20:pad);return {x:clamp(x,b.left,b.right),y:clamp(y,b.top,b.bottom)};}
+// Bei tatsaechlicher Fenstergroessenaenderung wandern bestehende Positionen
+// proportional mit: Zentren, Sedimente, Filamente und Verbindungen sind in
+// absoluten Pixeln gespeichert und wuerden sonst am alten Rahmen haengen
+// bleiben (halb sichtbar beim Verkleinern, dezentriert beim Vergroessern).
+// Positionen folgen der Bildmitte mit getrennten X/Y-Faktoren; Groessen
+// (Radien, Huellen, lokale Offsets) folgen einem uniformen min(W,H)-Faktor,
+// damit die Formen bei geaendertem Seitenverhaeltnis nicht verzerren.
+function rescaleWorld(oldW,oldH){
+  if(oldW<=0||oldH<=0)return;
+  const ocx=oldW*.5,ocy=oldH*.5,ncx=W*.5,ncy=H*.5;
+  const fx=W/oldW,fy=H/oldH,fs=Math.min(W,H)/Math.min(oldW,oldH);
+  const mapX=x=>ncx+(x-ocx)*fx,mapY=y=>ncy+(y-ocy)*fy;
+  for(const a of anchors){
+    if(a.x!=null)a.x=mapX(a.x);
+    if(a.y!=null)a.y=mapY(a.y);
+    if(a.homeX!=null)a.homeX=mapX(a.homeX);
+    if(a.homeY!=null)a.homeY=mapY(a.homeY);
+    if(a.lastTraceX!=null)a.lastTraceX=mapX(a.lastTraceX);
+    if(a.lastTraceY!=null)a.lastTraceY=mapY(a.lastTraceY);
+  }
+  for(const e of entities){
+    if(e.x!=null)e.x=mapX(e.x);
+    if(e.y!=null)e.y=mapY(e.y);
+    if(e.r!=null)e.r*=fs;
+    if(e.targetR!=null)e.targetR*=fs;
+  }
+  if(typeof mem!=='undefined'){
+    if(mem.deposits)for(const d of mem.deposits){
+      if(d.x!=null)d.x=mapX(d.x);
+      if(d.y!=null)d.y=mapY(d.y);
+      if(d.fixedX!=null)d.fixedX=mapX(d.fixedX);
+      if(d.fixedY!=null)d.fixedY=mapY(d.fixedY);
+      if(d.localX!=null)d.localX*=fs;
+      if(d.localY!=null)d.localY*=fs;
+      if(d.r!=null)d.r*=fs;
+      if(d.hullR!=null)d.hullR*=fs;
+      if(d.shadowR!=null)d.shadowR*=fs;
+      if(d.rel)for(const p of d.rel){p[0]*=fs;p[1]*=fs;}
+    }
+    if(mem.connections)for(const cn of mem.connections){
+      if(cn.cpx!=null)cn.cpx=mapX(cn.cpx);
+      if(cn.cpy!=null)cn.cpy=mapY(cn.cpy);
+    }
+  }
+  for(const f of filaments){
+    if(f.x0!=null)f.x0=mapX(f.x0);
+    if(f.y0!=null)f.y0=mapY(f.y0);
+    if(f.cx!=null)f.cx=mapX(f.cx);
+    if(f.cy!=null)f.cy=mapY(f.cy);
+    if(f.x1!=null)f.x1=mapX(f.x1);
+    if(f.y1!=null)f.y1=mapY(f.y1);
+    if(f.rootLocalX!=null)f.rootLocalX*=fs;
+    if(f.rootLocalY!=null)f.rootLocalY*=fs;
+  }
+  for(const s of edgeSpiderSites){
+    if(s.x!=null)s.x=mapX(s.x);
+    if(s.y!=null)s.y=mapY(s.y);
+  }
+}
 function resize(){
+  const prevW=W,prevH=H;
   const vp=viewportSize();W=vp.w;H=vp.h;DPR=effectiveDpr();
+  if(prevW>0&&prevH>0&&(prevW!==W||prevH!==H))rescaleWorld(prevW,prevH);
   ids.forEach(id=>{const c=document.getElementById(id);if(!c)return;c.width=Math.max(1,Math.round(W*DPR));c.height=Math.max(1,Math.round(H*DPR));c.style.width=W+'px';c.style.height=H+'px';ctx[id]=c.getContext('2d');ctx[id].setTransform(DPR,0,0,DPR,0,0);});
   ctx['c-live']=ctx['c-live-mid'];ctx['c-mem']=ctx['c-mem-mid'];ctx['c-fx']=ctx['c-fx-mid'];
   if(mouseParallaxReady){mouseParallaxX=clamp(mouseParallaxX,0,W);mouseParallaxY=clamp(mouseParallaxY,0,H);}else setParallaxCenter();
