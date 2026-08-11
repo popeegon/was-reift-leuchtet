@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 110
+     Version 111
      E. R. A. Hiller, 06.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -9,11 +9,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="E. R. A. Hiller">
 <meta name="copyright" content="E. R. A. Hiller, 2026. Alle Rechte vorbehalten.">
-<meta name="description" content="Was reift, leuchtet — Eine Visualisierung von Chat-Verläufen. E. R. A. Hiller, 2026.">
+<meta name="description" content="Was reift, leuchtet — Ein regelbasiertes Bildereignis: Ein möglicher Körper eines Chats. Generative Net Art von E. R. A. Hiller.">
 <meta name="dcterms.creator" content="E. R. A. Hiller">
 <meta name="dcterms.date" content="2026">
 <meta name="dcterms.rights" content="© E. R. A. Hiller, 2026. Alle Rechte vorbehalten.">
-<title>Was reift, leuchtet | E. R. A. Hiller</title>
+<title>Was reift, leuchtet — E. R. A. Hiller</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000}
@@ -72,7 +72,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
-  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 110</div>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 111</div>
 </div>
 <div id="panel">
 <div id="panelScroll">
@@ -225,14 +225,14 @@ const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
     analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
-    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet | E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet — E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
     legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',legendVersion:'Version '+VERSION,
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
     screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
-    showLabel:'Show motif anchors',title:'What ripens, gleams | E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',
+    showLabel:'Show motif anchors',title:'What ripens, gleams — E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
     legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively',legendVersion:'Version '+VERSION}
