@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 112
+     Version 113
      E. R. A. Hiller, 08.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -23,19 +23,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 #c-mem-back,#c-mem-mid,#c-mem-front,#c-live-back,#c-live-mid,#c-live-front,#c-fx-back,#c-fx-mid,#c-fx-front,#c-ui{position:fixed;inset:0;width:100vw;height:100vh}
 #counter-canvas{position:absolute;inset:0;width:100%;height:100%}
 #c-mem-back{z-index:1}#c-mem-mid{z-index:2}#c-mem-front{z-index:3}#c-live-back{z-index:4}#c-live-mid{z-index:5}#c-live-front{z-index:6}#c-fx-back{z-index:7}#c-fx-mid{z-index:8}#c-fx-front{z-index:9}#c-ui{z-index:10;pointer-events:none}
-#label{position:absolute;z-index:5;bottom:20px;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-style:italic;font-size:11px;letter-spacing:.204em;color:rgba(210,185,120,.434);white-space:nowrap;pointer-events:none}
+#label{position:absolute;z-index:20;bottom:20px;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-style:italic;font-size:11px;letter-spacing:.204em;color:rgba(210,185,120,.434);white-space:nowrap;pointer-events:auto;cursor:pointer;user-select:none}
 #t{position:absolute;z-index:5;top:18px;right:22px;font-family:"Courier New",monospace;font-size:8px;color:rgba(230,235,255,.055);letter-spacing:.1em;pointer-events:none;text-align:right;line-height:1.45}
 #toggle{position:absolute;z-index:20;left:14px;top:14px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(210,220,255,.14);background:rgba(0,0,0,.22);color:rgba(210,220,255,.38);font:18px/20px Georgia,serif;cursor:pointer}
-#panel{position:absolute;z-index:19;left:14px;top:46px;width:312px;max-height:calc(100vh - 64px);max-height:calc(100dvh - 64px);overflow:hidden;border:1px solid rgba(125,145,220,.14);border-radius:12px;background:rgba(2,4,12,.78);backdrop-filter:blur(8px);display:none;color:rgba(224,230,255,.66);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px}#panelScroll{max-height:calc(100vh - 64px);max-height:calc(100dvh - 64px);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:13px;box-sizing:border-box}
+#panel{position:absolute;z-index:19;left:14px;top:46px;width:312px;max-height:calc(100vh - 100px);max-height:calc(100dvh - 100px);overflow:hidden;border:1px solid rgba(125,145,220,.14);border-radius:12px;background:rgba(2,4,12,.78);backdrop-filter:blur(8px);display:none;color:rgba(224,230,255,.66);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px}#panelScroll{max-height:calc(100vh - 100px);max-height:calc(100dvh - 100px);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:13px;box-sizing:border-box}
 #panel.open{display:block}.row{display:grid;grid-template-columns:100px 24px 1fr;gap:6px;align-items:center;margin:8px 0}input[type=range]{width:100%;accent-color:#6577d2}textarea{width:100%;height:104px;resize:vertical;margin:4px 0 8px;padding:8px;border:1px solid rgba(180,195,255,.12);border-radius:9px;background:rgba(255,255,255,.035);color:rgba(230,235,255,.72);font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}textarea::placeholder{color:rgba(220,225,255,.28)}.check{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;margin:10px 0 5px}button.action{margin:4px 6px 6px 0;padding:6px 10px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(255,255,255,.04);color:rgba(224,230,255,.66);font-size:11px;cursor:pointer}.note{font-size:10px;line-height:1.38;color:rgba(224,230,255,.38);margin-top:8px}.status{font-size:10px;color:rgba(210,185,120,.62);line-height:1.4;margin:4px 0 7px}.credit{font-size:10px;line-height:1.35;color:rgba(210,185,120,.62);font-style:italic;margin:20px 0 0;text-align:left;transition:color .25s}.credit:hover{color:rgba(230,205,120,.92)}@keyframes creditPulse{0%{filter:brightness(1)}40%{filter:brightness(1.5)}100%{filter:brightness(1)}}.credit.pulse{animation:creditPulse 2.4s ease-out 1}.async-link{color:rgba(210,185,120,.62);font-style:italic;text-decoration:none;transition:color .25s}.async-link:visited{color:rgba(210,185,120,.62)}.async-link:hover{color:rgba(230,205,120,.92)}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(160,175,230,.18);border-radius:8px}
 .langFlag{display:inline-block;text-shadow:-1px 0 0 rgba(210,220,255,.2),1px 0 0 rgba(210,220,255,.2),0 -1px 0 rgba(210,220,255,.2),0 1px 0 rgba(210,220,255,.2),-1px -1px 0 rgba(210,220,255,.2),1px -1px 0 rgba(210,220,255,.2),-1px 1px 0 rgba(210,220,255,.2),1px 1px 0 rgba(210,220,255,.2)}
 </style>
 </head>
 <body>
 <canvas id="c-mem-back"></canvas><canvas id="c-mem-mid"></canvas><canvas id="c-mem-front"></canvas><canvas id="c-live-back"></canvas><canvas id="c-live-mid"></canvas><canvas id="c-live-front"></canvas><canvas id="c-fx-back"></canvas><canvas id="c-fx-mid"></canvas><canvas id="c-fx-front"></canvas><canvas id="c-ui"></canvas>
-<div id="label">Was reift, leuchtet</div><div id="t" style="display:none">t = 0</div>
+<div id="label" role="button" tabindex="0">Was reift, leuchtet</div><div id="t" style="display:none">t = 0</div>
 <div id="counter" style="position:absolute;z-index:20;right:14px;top:14px;width:80px;height:24px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(0,0,0,.22);pointer-events:none;display:flex;align-items:center;justify-content:center;"><div id="counter-bar" style="position:relative;width:90%;height:7px;border-radius:4px;background:transparent;box-shadow:0 0 7px rgba(220,226,255,.15);transition:box-shadow .9s linear;contain:paint;"><canvas id="counter-canvas" style="display:block;width:100%;height:100%;"></canvas></div></div>
 <button id="toggle" style="width:auto;min-width:72px;padding:0 10px;font-size:10px;letter-spacing:.12em;font-style:normal;color:#ffffff;border-radius:8px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Eingabe</button>
+<!-- Impressum / Datenschutz -->
+<button id="legalToggle" style="position:absolute;z-index:20;left:14px;bottom:14px;width:auto;min-width:80px;height:24px;padding:0 8px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(0,0,0,.22);color:#ffffff;font-size:10px;letter-spacing:.12em;font-style:normal;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;"><span id="legalBtn">Impressum</span></button>
+<div id="legalPanel" style="display:none;position:absolute;z-index:20;left:14px;bottom:46px;padding:14px 22px;background:rgba(2,4,12,.78);border:1px solid rgba(125,145,220,.14);border-radius:12px;backdrop-filter:blur(8px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;line-height:2;text-align:center;white-space:nowrap;">
+  <a href="https://erahiller.de/#impressum" target="_blank" rel="noopener" class="async-link" id="legalImp" style="display:block;">Impressum</a>
+  <a href="https://erahiller.de/#datenschutz" target="_blank" rel="noopener" class="async-link" id="legalPriv" style="display:block;">Datenschutz</a>
+  <div style="border-top:1px solid rgba(210,185,120,.25);margin:6px auto;width:60%;"></div>
+  <a href="https://www.erahiller.de" target="_blank" rel="noopener" class="async-link" style="display:block;font-style:normal;">www.erahiller.de</a>
+  <a href="mailto:erahiller@gmail.com" class="async-link" style="display:block;font-style:normal;">erahiller@gmail.com</a>
+  <a href="https://www.instagram.com/e.r.a.hiller/" target="_blank" rel="noopener" class="async-link" style="display:block;font-style:normal;">@e.r.a.hiller</a>
+</div>
 <!-- Legende -->
 <button id="legendToggle" style="position:absolute;z-index:20;right:14px;bottom:14px;width:80px;height:24px;border:1px solid rgba(210,220,255,.14);border-radius:8px;background:rgba(0,0,0,.22);color:#ffffff;font-size:10px;letter-spacing:.12em;font-style:normal;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;"><span id="legendBtn">Legende</span></button>
 <div id="legendPanel" style="display:none;position:absolute;z-index:20;right:14px;bottom:46px;width:286px;height:209px;background:rgba(2,4,12,.78);border:1px solid rgba(125,145,220,.14);border-radius:12px;padding:0;overflow:hidden;backdrop-filter:blur(8px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:rgba(224,230,255,.66);font-size:9px;line-height:1;white-space:nowrap;">
@@ -75,7 +85,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
-  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 112</div>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 113</div>
 </div>
 <div id="panel">
 <div id="panelScroll">
@@ -106,8 +116,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet — Created by E. R. A. Hiller, 2026</div>
   <div style="border-top:1px solid rgba(210,185,120,.25);margin:6px auto 0;width:60%;"></div>
   <a href="https://asyncmuseum.com/works/what-ripens-gleams" target="_blank" rel="noopener" class="async-link" id="selectedByLine" style="display:block;font-size:10px;line-height:1.35;text-align:center;margin-top:5px;"></a>
-  <div id="legalRule" style="border-top:1px solid rgba(210,185,120,.25);margin:7px auto 0;width:60%;"></div>
-  <div id="legalLine" style="display:flex;justify-content:space-between;align-items:center;font-size:10px;line-height:1;margin:5px auto 0;width:60%;"><a href="https://erahiller.de/#impressum" target="_blank" rel="noopener" class="async-link" id="legalImp" style="text-decoration:none;">Impressum</a><span style="font-size:16px;line-height:1;color:rgba(210,185,120,.62);">&middot;</span><a href="mailto:erahiller@gmail.com" class="async-link" style="font-size:13px;font-style:normal;text-decoration:none;">@</a><span style="font-size:16px;line-height:1;color:rgba(210,185,120,.62);">&middot;</span><a href="https://erahiller.de/#datenschutz" target="_blank" rel="noopener" class="async-link" id="legalPriv" style="text-decoration:none;">Datenschutz</a></div>
 </div>
 </div>
 
@@ -229,14 +237,14 @@ const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
     analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
-    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet — E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',legalImp:'Impressum',legalPriv:'Datenschutz',legalImpUrl:'https://erahiller.de/#impressum',legalPrivUrl:'https://erahiller.de/#datenschutz',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet — E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',legalBtn:'Impressum',legalImp:'Impressum',legalPriv:'Datenschutz',legalImpUrl:'https://erahiller.de/#impressum',legalPrivUrl:'https://erahiller.de/#datenschutz',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
     legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',legendVersion:'Version '+VERSION,
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
     screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
-    showLabel:'Show motif anchors',title:'What ripens, gleams — E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',legalImp:'Legal Notice',legalPriv:'Privacy',legalImpUrl:'https://erahiller.de/#impressum-en',legalPrivUrl:'https://erahiller.de/#datenschutz-en',
+    showLabel:'Show motif anchors',title:'What ripens, gleams — E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',legalBtn:'Legal Notice',legalImp:'Legal Notice',legalPriv:'Privacy',legalImpUrl:'https://erahiller.de/#impressum-en',legalPrivUrl:'https://erahiller.de/#datenschutz-en',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
     legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively',legendVersion:'Version '+VERSION}
@@ -276,11 +284,12 @@ window.setLang=function setLang(lang){
   text('showLabel',S.showLabel);text('parallaxLabel',S.parallaxLabel);
   ['legendTitle','legendBtn','legendSemLabel','legendSemL','legendSemR','legendOpenLabel','legendDenseLabel','legendReiLabel','legendReiL','legendReiR','legendGewLabel','legendGewL','legendGewR','legendDynLabel','legendDynL','legendDynR','legendVersion'].forEach(k=>{if(S[k])text(k,S[k]);});
   text('creditBtn',S.credit);
+  prop('label','title',S.creditTitle);
   prop('creditBtn','title',S.creditTitle);
   text('selectedByLine',S.selectedBy);
   text('legalImp',S.legalImp);text('legalPriv',S.legalPriv);
   prop('legalImp','href',S.legalImpUrl);prop('legalPriv','href',S.legalPrivUrl);
-  fitLegal();
+  text('legalBtn',S.legalBtn);
   ['Density','Tempo','Memory','MaxCenters','Birth','Network','Fusion','Spannung','Attraction','Depth'].forEach(k=>text('label'+k,S['label'+k]));
   if(_overlayEl){
     const de=_overlayEl.querySelector('.overlay-de');
@@ -362,7 +371,7 @@ function resetParallaxNeutral(){
   parallaxDirty=false;
 }
 function isParallaxUiTarget(target){
-  return !!(target&&target.closest&&target.closest('#panel,#toggle,#legendPanel,#legendToggle,#counter'));
+  return !!(target&&target.closest&&target.closest('#panel,#toggle,#legendPanel,#legendToggle,#legalPanel,#legalToggle,#label,#counter'));
 }
 function parallaxLateGate(){
   if(!parallaxRuntimeReady)return 0;
@@ -2733,14 +2742,6 @@ function restartAfterCompletion(){
     applyText(chatEl?chatEl.value:'');
   }
 }
-// Impressum-Zeile und Trennlinie so breit wie der Text "Ausgewaehlt von ..."
-function fitLegal(){
-  const a=document.getElementById('selectedByLine'),l=document.getElementById('legalLine'),r=document.getElementById('legalRule');
-  if(!a||!l||!r)return;
-  const rg=document.createRange();rg.selectNodeContents(a);
-  const w=Math.ceil(rg.getBoundingClientRect().width);
-  if(w>0){l.style.width=w+'px';r.style.width=w+'px';}
-}
 function wire(){
 // Einmaliges Aufleuchten des Credit-Textes beim ersten Oeffnen des
 // Input-Panels (pro Seitenaufruf), 1s verzoegert, danach unterdrueckt.
@@ -2750,7 +2751,7 @@ function wire(){
 let creditSeen=false;
 document.getElementById('toggle').onclick=()=>{
   document.getElementById('panel').classList.toggle('open');
-  fitLegal();
+  const lp=document.getElementById('legalPanel');if(lp)lp.style.display='none';
   try{
     if(!creditSeen){
       creditSeen=true;
@@ -2772,6 +2773,13 @@ document.addEventListener('pointerdown',e=>{
   if(e.target&&e.target.closest&&e.target.closest('#panel,#toggle'))return;
   panel.classList.remove('open');
 });
+// Impressum-Fenster schliesst bei Klick ausserhalb.
+document.addEventListener('pointerdown',e=>{
+  const lp=document.getElementById('legalPanel');
+  if(!lp||lp.style.display==='none')return;
+  if(e.target&&e.target.closest&&e.target.closest('#legalPanel,#legalToggle'))return;
+  lp.style.display='none';
+});
 const langDE=document.getElementById('langDE');if(langDE)langDE.addEventListener('click',()=>window.setLang('de'));
 const langEN=document.getElementById('langEN');if(langEN)langEN.addEventListener('click',()=>window.setLang('en'));
 window.setLang(currentLang);
@@ -2786,6 +2794,7 @@ for(const id of ids){
 const spInp=document.getElementById('spannung');
 spInp.oninput=()=>setControlValue('spannung',spInp.value);
 document.getElementById('show').onchange=e=>{set.show=e.target.checked;drawUI();};
+document.getElementById('legalToggle').onclick=()=>{const p=document.getElementById('legalPanel');p.style.display=p.style.display==='none'?'block':'none';};
 document.getElementById('legendToggle').onclick=()=>{const p=document.getElementById('legendPanel');p.style.display=p.style.display==='none'?'block':'none';};
 document.getElementById('parallaxOn').onchange=e=>{
   set.parallaxOn=e.target.checked;
@@ -2809,6 +2818,7 @@ for(const id of ids){const el=document.getElementById(id);if(el)el.oninput();}
 spInp.oninput();
 }
 parallaxRuntimeReady=true;updateTopologySalt();refreshMotifLayout();wire();updateStatus();resetLifecycle();resetScene();const params=new URLSearchParams(location.search);if(params.get('debug')==='1'){const td=document.getElementById('t');if(td)td.style.display='';}const target=parseInt(params.get('t')||'0',10);if(target>0){while(T<target)step();render();window.__done=true;}else{requestAnimationFrame(loop);}
+const labelBtn=document.getElementById('label');if(labelBtn){labelBtn.addEventListener('click',()=>{const cb=document.getElementById('creditBtn');if(cb)cb.click();});labelBtn.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();labelBtn.click();}});}
 const creditBtn=document.getElementById('creditBtn');if(creditBtn)creditBtn.addEventListener('click',()=>{const ov=_getOverlay();if(!ov)return;const de=ov.querySelector('.overlay-de');const en=ov.querySelector('.overlay-en');if(de)de.style.display=currentLang==='de'?'':'none';if(en)en.style.display=currentLang==='en'?'':'none';ov.style.display='block';});
 })();
 </script>
