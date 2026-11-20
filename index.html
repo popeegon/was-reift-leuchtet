@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Was reift, leuchtet - What ripens, gleams
-     Version 111
+     Version 112
      E. R. A. Hiller, 08.2026
      Alle Rechte vorbehalten. - All rights reserved. -->
 <html lang="de">
@@ -73,7 +73,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <svg width="28" height="8" viewBox="0 0 28 8" style="position:absolute;left:179px;top:160px;display:block;"><polygon points="0,8 28,0 28,8" fill="rgba(180,200,255,.25)"/></svg>
   <span style="position:absolute;left:218px;top:159px;width:18px;text-align:center;font-size:11px;line-height:1;letter-spacing:-2px;">▶▶</span>
   <span id="legendDynR" style="position:absolute;left:241px;top:159px;text-align:left;">lebhaft</span>
-  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 111</div>
+  <div id="legendVersion" style="position:absolute;left:17px;bottom:9px;text-align:left;font-size:10px;line-height:1.5;color:rgba(210,185,120,.62);font-style:italic;pointer-events:none;">Version 112</div>
 </div>
 <div id="panel">
 <div id="panelScroll">
@@ -104,7 +104,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
   <div class="credit" id="creditBtn" style="text-align:center;cursor:pointer;user-select:none" title="Erläuterung">Was reift, leuchtet — Created by E. R. A. Hiller, 2026</div>
   <div style="border-top:1px solid rgba(210,185,120,.25);margin:6px auto 0;width:60%;"></div>
   <a href="https://asyncmuseum.com/works/what-ripens-gleams" target="_blank" rel="noopener" class="async-link" id="selectedByLine" style="display:block;font-size:10px;line-height:1.35;text-align:center;margin-top:5px;"></a>
-  <a href="mailto:erahiller@gmail.com" class="async-link" style="display:block;font-size:15px;line-height:1;text-align:center;margin-top:10px;font-style:normal;text-decoration:none;">@</a>
+  <div id="legalRule" style="border-top:1px solid rgba(210,185,120,.25);margin:7px auto 0;width:60%;"></div>
+  <div id="legalLine" style="display:flex;justify-content:space-between;align-items:center;font-size:10px;line-height:1;margin:5px auto 0;width:60%;"><a href="https://erahiller.de/#impressum" target="_blank" rel="noopener" class="async-link" id="legalImp" style="text-decoration:none;">Impressum</a><span style="font-size:16px;line-height:1;color:rgba(210,185,120,.62);">&middot;</span><a href="mailto:erahiller@gmail.com" class="async-link" style="font-size:13px;font-style:normal;text-decoration:none;">@</a><span style="font-size:16px;line-height:1;color:rgba(210,185,120,.62);">&middot;</span><a href="https://erahiller.de/#datenschutz" target="_blank" rel="noopener" class="async-link" id="legalPriv" style="text-decoration:none;">Datenschutz</a></div>
 </div>
 </div>
 
@@ -226,14 +227,14 @@ const STRINGS={
   de:{toggle:'Eingabe',placeholder:'Chattext hier einfügen. Ohne Eingabe läuft nur ein Demo-Muster; dann wird kein echter Chat ausgewertet.',
     analyse:'Chat auswerten',demo:'Demo',reset:'Reset',
     screenHint:'Entfaltet sich am besten auf größeren Bildschirmen.',statusDemo:'Kein Text eingegeben. Demo läuft.',statusThin:'Text sehr kurz. Keim reift.',statusChat:'Chat ausgewertet. Motive reifen.',
-    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet — E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',
+    showLabel:'Motivanker zeigen',title:'Was reift, leuchtet — E. R. A. Hiller',label:'Was reift, leuchtet',credit:'Was reift, leuchtet — E. R. A. Hiller, 2026',creditTitle:'Erläuterung',selectedBy:'Ausgewählt von Async Museum',legalImp:'Impressum',legalPriv:'Datenschutz',
     labelDensity:'Belebung',labelTempo:'Tempo',labelMemory:'Gedächtnis',labelMaxCenters:'Zentren',labelBirth:'Reifung',
     legendTitle:'Basislegende',legendBtn:'Legende',legendSemLabel:'Sujetlage',legendSemL:'konzeptuell',legendSemR:'affektiv',legendOpenLabel:'offen',legendDenseLabel:'verdichtet',legendReiLabel:'Chatreife',legendReiL:'jung',legendReiR:'gereift',legendGewLabel:'Motivgewicht',legendGewL:'randständig',legendGewR:'zentral',legendDynLabel:'Dynamik',legendDynL:'ruhend',legendDynR:'lebhaft',legendVersion:'Version '+VERSION,
     labelNetwork:'Verflechtung',labelFusion:'Verschmelzung',labelSpannung:'Spannung',labelAttraction:'Anziehung',labelDepth:'Persistenz',parallaxLabel:'Parallaxe'},
   en:{toggle:'Input',placeholder:'Paste chat text here. Without input, only a demo pattern runs; no actual chat will be analysed.',
     analyse:'Analyse chat',demo:'Demo',reset:'Reset',
     screenHint:'Unfolds best on larger screens.',statusDemo:'No text entered. Demo running.',statusThin:'Text very short. Seed ripening.',statusChat:'Chat analysed. Motifs ripening.',
-    showLabel:'Show motif anchors',title:'What ripens, gleams — E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',
+    showLabel:'Show motif anchors',title:'What ripens, gleams — E. R. A. Hiller',label:'What ripens, gleams',credit:'What ripens, gleams — E. R. A. Hiller, 2026',creditTitle:'Explanation',selectedBy:'Selected by Async Museum',legalImp:'Legal Notice',legalPriv:'Privacy',
     labelDensity:'Vitality',labelTempo:'Speed',labelMemory:'Memory',labelMaxCenters:'Centres',labelBirth:'Maturation',
     labelNetwork:'Entanglement',labelFusion:'Fusion',labelSpannung:'Tension',labelAttraction:'Attraction',labelDepth:'Persistence',parallaxLabel:'Parallax',
     legendTitle:'Basic legend',legendBtn:'Legend',legendSemLabel:'Subject register',legendSemL:'conceptual',legendSemR:'affective',legendOpenLabel:'open',legendDenseLabel:'condensed',legendReiLabel:'Chat maturity',legendReiL:'new',legendReiR:'mature',legendGewLabel:'Motif weight',legendGewL:'peripheral',legendGewR:'central',legendDynLabel:'Dynamics',legendDynL:'still',legendDynR:'lively',legendVersion:'Version '+VERSION}
@@ -275,6 +276,8 @@ window.setLang=function setLang(lang){
   text('creditBtn',S.credit);
   prop('creditBtn','title',S.creditTitle);
   text('selectedByLine',S.selectedBy);
+  text('legalImp',S.legalImp);text('legalPriv',S.legalPriv);
+  fitLegal();
   ['Density','Tempo','Memory','MaxCenters','Birth','Network','Fusion','Spannung','Attraction','Depth'].forEach(k=>text('label'+k,S['label'+k]));
   if(_overlayEl){
     const de=_overlayEl.querySelector('.overlay-de');
@@ -2727,16 +2730,27 @@ function restartAfterCompletion(){
     applyText(chatEl?chatEl.value:'');
   }
 }
+// Impressum-Zeile und Trennlinie so breit wie der Text "Ausgewaehlt von ..."
+function fitLegal(){
+  const a=document.getElementById('selectedByLine'),l=document.getElementById('legalLine'),r=document.getElementById('legalRule');
+  if(!a||!l||!r)return;
+  const rg=document.createRange();rg.selectNodeContents(a);
+  const w=Math.ceil(rg.getBoundingClientRect().width);
+  if(w>0){l.style.width=w+'px';r.style.width=w+'px';}
+}
 function wire(){
 // Einmaliges Aufleuchten des Credit-Textes beim ersten Oeffnen des
-// Input-Panels (pro Browser), 1s verzoegert, danach dauerhaft unterdrueckt.
+// Input-Panels (pro Seitenaufruf), 1s verzoegert, danach unterdrueckt.
+// Nichts wird im Browser gespeichert.
 // An das Panel-Oeffnen gebunden statt an den Seitenaufbau, da der Credit
 // im geschlossenen Panel unsichtbar ist und ein Puls davor ungesehen bliebe.
+let creditSeen=false;
 document.getElementById('toggle').onclick=()=>{
   document.getElementById('panel').classList.toggle('open');
+  fitLegal();
   try{
-    if(!localStorage.getItem('wrlCreditSeen')){
-      localStorage.setItem('wrlCreditSeen','1');
+    if(!creditSeen){
+      creditSeen=true;
       setTimeout(()=>{
         const cb=document.getElementById('creditBtn');
         if(cb){

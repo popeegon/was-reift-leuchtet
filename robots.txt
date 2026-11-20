@@ -1,0 +1,15 @@
+# was-reift-leuchtet.erahiller.de – E. R. A. Hiller
+# Suche und Zitieren erlaubt, KI-Training nicht.
+# Search and citation allowed, AI training not.
+
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+Disallow: /
+
+User-agent: *
+Allow: /
